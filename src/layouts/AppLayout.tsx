@@ -1,4 +1,4 @@
-import { Menu, PanelLeftClose, Search, X } from 'lucide-react';
+import { Menu, PanelLeftClose, X } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
@@ -27,7 +27,7 @@ export function AppLayout() {
           <div className="brand-mark">PO</div>
           <div>
             <strong>Project Ops</strong>
-            <span>Operations Platform</span>
+            <span>Proof of Concept</span>
           </div>
         </div>
         {navigation}
@@ -55,7 +55,7 @@ export function AppLayout() {
                 <div className="brand-mark">PO</div>
                 <div>
                   <strong>Project Ops</strong>
-                  <span>Operations Platform</span>
+                  <span>Proof of Concept</span>
                 </div>
               </div>
               <button type="button" className="icon-button" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation menu">
@@ -68,17 +68,6 @@ export function AppLayout() {
       )}
 
       <main className="content-shell">
-        <header className="topbar">
-          <div>
-            <span>Project Operations PoC</span>
-            <h1>Operations Dashboard</h1>
-          </div>
-          <label className="project-search">
-            <Search size={18} />
-            <span className="sr-only">Search projects</span>
-            <input type="search" placeholder="Search projects, PMs, milestones..." aria-label="Search projects" />
-          </label>
-        </header>
         <Outlet />
       </main>
     </div>
