@@ -75,7 +75,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       </div>
 
       <div className="project-card__footer">
-        <span>{project.phase} · attention score {attentionScore}</span>
+        <span>{project.phase} - attention score {attentionScore}</span>
         <Link to={`/projects/${project.id}`} aria-label={`View ${project.name} details`}>
           View details <ArrowRight size={16} />
         </Link>

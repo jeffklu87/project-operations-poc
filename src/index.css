@@ -700,6 +700,10 @@ tbody tr:last-child td {
   border-top: 4px solid #d97706;
 }
 
+.priority-panel--quiet {
+  border-top: 4px solid var(--border-strong);
+}
+
 .item-list {
   display: grid;
   gap: 10px;
@@ -819,8 +823,22 @@ tbody tr:last-child td {
   align-content: start;
 }
 
+.huddle-grid,
+.category-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.huddle-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .huddle-card svg {
   color: var(--blue);
+}
+
+.readiness-row--work {
+  grid-template-columns: auto minmax(0, 1fr) minmax(120px, auto);
 }
 
 .readiness-mix {
@@ -886,6 +904,21 @@ tbody tr:last-child td {
 
 .notes-panel h2 {
   margin: 0;
+}
+
+.project-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.project-metadata span {
+  padding: 6px 10px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
 }
 
 .empty-inline {
@@ -1023,6 +1056,7 @@ td span {
   .detail-hero,
   .project-grid,
   .module-grid,
+  .huddle-grid,
   .filter-panel,
   .split-grid,
   .split-grid--priority {

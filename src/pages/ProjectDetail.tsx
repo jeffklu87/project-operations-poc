@@ -1,4 +1,4 @@
-import { ArrowLeft, BriefcaseBusiness, CalendarDays, MapPin, UserRound } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { ModuleSummaryCard } from '../components/ModuleSummaryCard';
 import { StatusBadge } from '../components/StatusBadge';
@@ -20,18 +20,19 @@ export function ProjectDetail() {
 
   const redItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Red');
   const yellowItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Yellow');
+  const discussionItems = [...redItems, ...yellowItems];
   const categorySummaries = getCategorySummaries(project.readinessItems);
   const nextMilestone = project.milestones.find((milestone) => milestone.state !== 'Complete');
 
   return (
     <section className="page-stack">
       <Link className="back-link" to="/">
-        <ArrowLeft size={16} /> Back to portfolio dashboard
+        <ArrowLeft size={16} /> Back to manager huddle
       </Link>
 
-      <div className="detail-hero">
+      <div className="detail-hero detail-hero--focused">
         <div>
-          <p className="eyebrow">Project detail / {project.projectNumber}</p>
+          <p className="eyebrow">{project.projectNumber} - {project.manager}</p>
           <div className="detail-hero__title">
             <h1>{project.name}</h1>
             <div className="attention-counts">
@@ -44,38 +45,42 @@ export function ProjectDetail() {
         <div className="hero-panel__callout">
           <span>Next milestone</span>
           <strong>{nextMilestone?.name ?? 'None active'}</strong>
-          {nextMilestone && <p>{formatDate(nextMilestone.date)} · {nextMilestone.state}</p>}
+          {nextMilestone && <p>{formatDate(nextMilestone.date)} - {nextMilestone.state}</p>}
         </div>
       </div>
 
-      <div className="overview-grid">
-        <article>
-          <BriefcaseBusiness size={20} />
-          <span>Client</span>
-          <strong>{project.client}</strong>
-        </article>
-        <article>
-          <MapPin size={20} />
-          <span>Location</span>
-          <strong>{project.location}</strong>
-        </article>
-        <article>
-          <UserRound size={20} />
-          <span>Project manager</span>
-          <strong>{project.manager}</strong>
-        </article>
-        <article>
-          <CalendarDays size={20} />
-          <span>Contract value</span>
-          <strong>{project.contractValue}</strong>
-        </article>
-      </div>
+      <section className="priority-panel priority-panel--red">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Discuss first</p>
+            <h2>Project discussion items</h2>
+          </div>
+          <span>{discussionItems.length} red/yellow items</span>
+        </div>
+        <div className="item-list">
+          {discussionItems.length === 0 && <p className="empty-inline">No red or yellow discussion items for this project.</p>}
+          {discussionItems.map((item) => (
+            <article className="readiness-row" key={item.id}>
+              <StatusBadge status={getReadinessStatus(item)} />
+              <div>
+                <strong>{item.title}</strong>
+                <p>{item.category} - {item.actionRequired}</p>
+                <span>{item.latestUpdate}</span>
+              </div>
+              <div className="row-meta">
+                <span>{item.owner}</span>
+                <strong>{formatDate(item.dueDate)}</strong>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="table-card">
         <div className="section-heading section-heading--inset">
           <div>
-            <p className="eyebrow">Key milestones</p>
-            <h2>Project readiness timeline</h2>
+            <p className="eyebrow">Timeline</p>
+            <h2>Key milestones</h2>
           </div>
         </div>
         <div className="milestone-strip">
@@ -104,8 +109,8 @@ export function ProjectDetail() {
       <section className="table-card">
         <div className="section-heading section-heading--inset">
           <div>
-            <p className="eyebrow">Readiness item list</p>
-            <h2>Actions, owners, due dates, and latest update</h2>
+            <p className="eyebrow">Readiness item table</p>
+            <h2>All actions, owners, due dates, and updates</h2>
           </div>
           <span>{project.readinessItems.length} tracked items</span>
         </div>
@@ -144,12 +149,11 @@ export function ProjectDetail() {
         </div>
       </section>
 
-      <section className="notes-panel">
-        <div>
-          <p className="eyebrow">Latest update</p>
-          <h2>Manager note</h2>
-        </div>
-        <p>{project.latestUpdate}</p>
+      <section className="project-metadata">
+        <span>{project.client}</span>
+        <span>{project.location}</span>
+        <span>{project.phase}</span>
+        <span>{project.contractValue}</span>
       </section>
     </section>
   );
