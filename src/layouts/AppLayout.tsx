@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const navItems = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/procurement', label: 'Procurement' },
+  { to: '/', label: 'Portfolio Dashboard' },
+  { to: '/pm-queue', label: 'PM Work Queue' },
 ];
 
 export function AppLayout() {
@@ -27,7 +27,7 @@ export function AppLayout() {
           <div className="brand-mark">PO</div>
           <div>
             <strong>Project Ops</strong>
-            <span>Proof of Concept</span>
+            <span>Readiness System</span>
           </div>
         </div>
         {navigation}
@@ -55,7 +55,7 @@ export function AppLayout() {
                 <div className="brand-mark">PO</div>
                 <div>
                   <strong>Project Ops</strong>
-                  <span>Proof of Concept</span>
+                  <span>Readiness System</span>
                 </div>
               </div>
               <button type="button" className="icon-button" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation menu">

@@ -1,59 +1,57 @@
-import { Activity, AlertTriangle, CheckCircle2, ClipboardList } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CircleDot, ClipboardList, MessageSquareWarning } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ModuleSummaryCard } from '../components/ModuleSummaryCard';
 import { ProjectCard } from '../components/ProjectCard';
-import { projects, type StatusLevel } from '../data/mockData';
-
-const moduleKeys = ['overall', 'procurement', 'resources', 'startup', 'documentation'] as const;
-
-const getModuleAverage = (key: (typeof moduleKeys)[number]) => {
-  const total = projects.reduce((sum, project) => sum + (project.modules.find((module) => module.key === key)?.progress ?? 0), 0);
-  return Math.round(total / projects.length);
-};
-
-const dashboardMetrics = [
-  { label: 'Active projects', value: projects.length, icon: ClipboardList, detail: 'Across water, utility, and campus work' },
-  { label: 'On-track modules', value: projects.flatMap((project) => project.modules).filter((module) => module.status === 'On Track').length, icon: CheckCircle2, detail: 'Operational modules in good standing' },
-  { label: 'Watch / at-risk modules', value: projects.flatMap((project) => project.modules).filter((module) => module.status === 'Watch' || module.status === 'At Risk').length, icon: AlertTriangle, detail: 'Need project team attention' },
-  { label: 'Average completion', value: `${Math.round(projects.reduce((sum, project) => sum + project.completion, 0) / projects.length)}%`, icon: Activity, detail: 'Portfolio construction readiness' },
-];
+import { StatusBadge } from '../components/StatusBadge';
+import {
+  formatDate,
+  getCategorySummaries,
+  getProjectAttentionScore,
+  getReadinessStatus,
+  getUpcomingMilestones,
+  projects,
+  readinessItems,
+} from '../data/mockData';
 
 export function Dashboard() {
-  const portfolioModules = moduleKeys.map((key) => {
-    const sample = projects[0].modules.find((module) => module.key === key)!;
-    const progress = getModuleAverage(key);
-    const status: StatusLevel = progress >= 65 ? 'On Track' : progress >= 45 ? 'Watch' : 'At Risk';
+  const redItems = readinessItems.filter((item) => getReadinessStatus(item) === 'Red');
+  const yellowItems = readinessItems.filter((item) => getReadinessStatus(item) === 'Yellow');
+  const greenItems = readinessItems.filter((item) => getReadinessStatus(item) === 'Green');
+  const upcomingMilestones = getUpcomingMilestones(7);
+  const projectsNeedingAttention = [...projects]
+    .filter((project) => getProjectAttentionScore(project) > 0)
+    .sort((a, b) => getProjectAttentionScore(b) - getProjectAttentionScore(a));
+  const categorySummaries = getCategorySummaries();
 
-    return {
-      ...sample,
-      progress,
-      summary: `Portfolio average readiness for ${sample.label.toLowerCase()} across all mock projects.`,
-      owner: 'Operations PMO',
-      status,
-    };
-  });
+  const portfolioMetrics = [
+    { label: 'Red readiness items', value: redItems.length, detail: 'Require action or resolution in the next week', icon: AlertTriangle, tone: 'red' },
+    { label: 'Yellow readiness items', value: yellowItems.length, detail: 'Require planning in the next 30 days', icon: CalendarClock, tone: 'yellow' },
+    { label: 'Projects for huddle', value: projectsNeedingAttention.length, detail: 'Projects with red or yellow management items', icon: MessageSquareWarning, tone: 'blue' },
+    { label: 'Green active items', value: greenItems.length, detail: 'Visible, but not driving manager attention', icon: ClipboardList, tone: 'green' },
+  ];
 
   return (
     <section className="page-stack">
       <div className="hero-panel">
         <div>
-          <p className="eyebrow">Project Operations PoC</p>
-          <h1>Operational status command center</h1>
+          <p className="eyebrow">Portfolio dashboard</p>
+          <h1>Manager huddle view for project readiness</h1>
           <p>
-            Monitor procurement, resources, startup readiness, and documentation health using realistic mock data before backend integration.
+            Red and yellow readiness items are evaluated from due dates, active project facts, and completion state so managers can see what needs action this week and planning this month.
           </p>
         </div>
         <div className="hero-panel__callout">
-          <span>Portfolio pulse</span>
-          <strong>Managed visibility</strong>
-          <p>Built for weekly project reviews and executive status standups.</p>
+          <span>Readiness logic</span>
+          <strong>Red first</strong>
+          <p>Projects are not manually colored. Their readiness items drive the attention view.</p>
         </div>
       </div>
 
       <div className="metric-grid">
-        {dashboardMetrics.map((metric) => {
+        {portfolioMetrics.map((metric) => {
           const Icon = metric.icon;
           return (
-            <article className="metric-card" key={metric.label}>
+            <article className={`metric-card metric-card--${metric.tone}`} key={metric.label}>
               <span className="metric-card__icon">
                 <Icon size={22} />
               </span>
@@ -67,28 +65,141 @@ export function Dashboard() {
         })}
       </div>
 
+      <div className="split-grid split-grid--priority">
+        <section className="priority-panel priority-panel--red">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">This week</p>
+              <h2>Red readiness items</h2>
+            </div>
+            <span>{redItems.length} open</span>
+          </div>
+          <div className="item-list">
+            {redItems.map((item) => (
+              <Link className="readiness-row" to={`/projects/${item.projectId}`} key={item.id}>
+                <StatusBadge status="Red" />
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.projectNumber} · {item.projectName}</p>
+                  <span>{item.actionRequired}</span>
+                </div>
+                <div className="row-meta">
+                  <span>{item.owner}</span>
+                  <strong>{formatDate(item.dueDate)}</strong>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="priority-panel priority-panel--yellow">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Next 30 days</p>
+              <h2>Yellow readiness items</h2>
+            </div>
+            <span>{yellowItems.length} open</span>
+          </div>
+          <div className="item-list">
+            {yellowItems.slice(0, 8).map((item) => (
+              <Link className="readiness-row" to={`/projects/${item.projectId}`} key={item.id}>
+                <StatusBadge status="Yellow" />
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.projectNumber} · {item.projectName}</p>
+                  <span>{item.actionRequired}</span>
+                </div>
+                <div className="row-meta">
+                  <span>{item.owner}</span>
+                  <strong>{formatDate(item.dueDate)}</strong>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="split-grid">
+        <section className="table-card">
+          <div className="section-heading section-heading--inset">
+            <div>
+              <p className="eyebrow">Milestones</p>
+              <h2>Upcoming portfolio milestones</h2>
+            </div>
+          </div>
+          <div className="responsive-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Milestone</th>
+                  <th>Project</th>
+                  <th>Date</th>
+                  <th>State</th>
+                </tr>
+              </thead>
+              <tbody>
+                {upcomingMilestones.map((milestone) => (
+                  <tr key={milestone.id}>
+                    <td><strong>{milestone.name}</strong></td>
+                    <td>{milestone.projectNumber} · {milestone.projectName}</td>
+                    <td>{formatDate(milestone.date)}</td>
+                    <td><StatusBadge status={milestone.state} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="huddle-list">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Manager huddle</p>
+              <h2>Projects needing attention</h2>
+            </div>
+          </div>
+          {projectsNeedingAttention.map((project) => {
+            const redCount = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Red').length;
+            const yellowCount = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Yellow').length;
+            return (
+              <Link className="huddle-card" to={`/projects/${project.id}`} key={project.id}>
+                <CircleDot size={18} />
+                <div>
+                  <strong>{project.name}</strong>
+                  <p>{project.manager} · {project.phase}</p>
+                </div>
+                <div className="attention-counts">
+                  <span className="count-pill count-pill--red">{redCount} red</span>
+                  <span className="count-pill count-pill--yellow">{yellowCount} yellow</span>
+                </div>
+              </Link>
+            );
+          })}
+        </section>
+      </div>
+
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Dashboard</p>
-          <h2>Project cards</h2>
+          <p className="eyebrow">Category breakdown</p>
+          <h2>Readiness by operating category</h2>
         </div>
-        <span>{projects.length} mock projects</span>
       </div>
-      <div className="project-grid">
-        {projects.map((project) => (
-          <ProjectCard project={project} key={project.id} />
+      <div className="module-grid">
+        {categorySummaries.map((summary) => (
+          <ModuleSummaryCard key={summary.category} module={summary} />
         ))}
       </div>
 
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Module health</p>
-          <h2>Portfolio status summary</h2>
+          <p className="eyebrow">Portfolio</p>
+          <h2>Project cards</h2>
         </div>
+        <span>{projects.length} active PoC projects</span>
       </div>
-      <div className="module-grid">
-        {portfolioModules.map((module) => (
-          <ModuleSummaryCard key={module.key} module={module} />
+      <div className="project-grid">
+        {projects.map((project) => (
+          <ProjectCard project={project} key={project.id} />
         ))}
       </div>
     </section>

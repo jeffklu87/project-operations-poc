@@ -1,26 +1,33 @@
 import type { LucideIcon } from 'lucide-react';
-import { ClipboardCheck, FileText, HardHat, PackageCheck, Users } from 'lucide-react';
+import { FileWarning, FileText, HardHat, PackageCheck, ShieldCheck, Users } from 'lucide-react';
 
-export type StatusLevel = 'On Track' | 'Watch' | 'At Risk' | 'Blocked';
+export type ReadinessCategory = 'Procurement' | 'Resources' | 'Startup' | 'Documentation' | 'Quality' | 'Issues';
+export type ReadinessStatus = 'Red' | 'Yellow' | 'Green' | 'Gray';
+export type ItemState = 'Not started' | 'In progress' | 'Waiting' | 'Complete';
+export type MilestoneState = 'Complete' | 'Upcoming' | 'At risk';
 
-export type ModuleKey = 'overall' | 'procurement' | 'resources' | 'startup' | 'documentation';
-
-export interface ModuleStatus {
-  key: ModuleKey;
-  label: string;
-  status: StatusLevel;
-  progress: number;
-  summary: string;
-  owner: string;
-  icon: LucideIcon;
+export interface Milestone {
+  id: string;
+  name: string;
+  date: string;
+  state: MilestoneState;
 }
 
-export interface ProjectIssue {
+export interface ReadinessItem {
   id: string;
+  projectId: string;
+  projectName: string;
+  projectNumber: string;
+  category: ReadinessCategory;
   title: string;
-  module: string;
-  severity: 'Low' | 'Medium' | 'High';
+  owner: string;
   dueDate: string;
+  actionRequired: string;
+  latestUpdate: string;
+  sourceReference?: string;
+  state: ItemState;
+  active: boolean;
+  applicable: boolean;
 }
 
 export interface Project {
@@ -31,177 +38,246 @@ export interface Project {
   location: string;
   manager: string;
   phase: string;
-  budget: string;
-  completion: number;
-  nextMilestone: string;
-  modules: ModuleStatus[];
-  issues: ProjectIssue[];
+  contractValue: string;
+  latestUpdate: string;
+  milestones: Milestone[];
+  readinessItems: ReadinessItem[];
 }
 
-export interface PurchaseRequest {
-  id: string;
-  projectId: string;
-  projectName: string;
-  description: string;
-  requester: string;
-  status: 'Draft' | 'Submitted' | 'Approved' | 'Ordered';
-  requiredBy: string;
-  value: string;
+export interface CategorySummary {
+  category: ReadinessCategory;
+  icon: LucideIcon;
+  red: number;
+  yellow: number;
+  green: number;
+  gray: number;
+  totalActive: number;
+  attention: string;
 }
 
-export interface MaterialItem {
-  id: string;
-  projectId: string;
-  projectName: string;
-  item: string;
-  supplier: string;
-  status: 'Spec Review' | 'RFQ' | 'PO Issued' | 'In Transit' | 'Delivered';
-  needDate: string;
-  risk: 'Low' | 'Medium' | 'High';
-}
+export const today = new Date('2026-06-03T12:00:00');
 
-const moduleIcons: Record<ModuleKey, LucideIcon> = {
-  overall: ClipboardCheck,
-  procurement: PackageCheck,
-  resources: Users,
-  startup: HardHat,
-  documentation: FileText,
+export const readinessCategories: ReadinessCategory[] = [
+  'Procurement',
+  'Resources',
+  'Startup',
+  'Documentation',
+  'Quality',
+  'Issues',
+];
+
+export const categoryIcons: Record<ReadinessCategory, LucideIcon> = {
+  Procurement: PackageCheck,
+  Resources: Users,
+  Startup: HardHat,
+  Documentation: FileText,
+  Quality: ShieldCheck,
+  Issues: FileWarning,
 };
 
-const createModules = (
-  statuses: Array<Omit<ModuleStatus, 'icon'> & { key: ModuleKey }>,
-): ModuleStatus[] => statuses.map((module) => ({ ...module, icon: moduleIcons[module.key] }));
+const item = (
+  project: Pick<Project, 'id' | 'name' | 'projectNumber'>,
+  itemData: Omit<ReadinessItem, 'projectId' | 'projectName' | 'projectNumber'>,
+): ReadinessItem => ({
+  ...itemData,
+  projectId: project.id,
+  projectName: project.name,
+  projectNumber: project.projectNumber,
+});
+
+const projectShells = [
+  { id: 'elmhc-bundle-5', projectNumber: 'POC-2401', name: 'ELMHC Bundle 5' },
+  { id: 'rolme-ls3', projectNumber: 'POC-2402', name: 'ROLME LS3' },
+  { id: 'huntv-well-13', projectNumber: 'POC-2403', name: 'HUNTV Well 13' },
+  { id: 'waukc-beechnut', projectNumber: 'POC-2404', name: 'WAUKC Beechnut' },
+  { id: 'nppwd-pfas', projectNumber: 'POC-2405', name: 'NPPWD PFAS' },
+];
 
 export const projects: Project[] = [
   {
-    id: 'elmhc-bundle-5',
-    projectNumber: 'POC-2401',
-    name: 'ELMHC Bundle 5',
+    ...projectShells[0],
     client: 'East Lake Municipal Health Campus',
     location: 'East Lake, TX',
     manager: 'Avery Grant',
     phase: 'Field mobilization',
-    budget: '$8.4M',
-    completion: 64,
-    nextMilestone: 'Temporary power inspection - Jun 18',
-    modules: createModules([
-      { key: 'overall', label: 'Overall status', status: 'On Track', progress: 68, summary: 'Milestones are sequencing cleanly with field teams mobilized.', owner: 'Avery Grant' },
-      { key: 'procurement', label: 'Procurement', status: 'Watch', progress: 55, summary: 'Switchgear submittals need approval before release.', owner: 'Morgan Lee' },
-      { key: 'resources', label: 'Resources', status: 'On Track', progress: 72, summary: 'Civil and electrical crews are staffed for the next three weeks.', owner: 'Jordan Patel' },
-      { key: 'startup', label: 'Startup', status: 'Watch', progress: 38, summary: 'Startup plan drafted; commissioning dates depend on equipment release.', owner: 'Sam Rivera' },
-      { key: 'documentation', label: 'Documentation', status: 'On Track', progress: 81, summary: 'Daily reports and permit logs are current.', owner: 'Riley Chen' },
-    ]),
-    issues: [
-      { id: 'ISS-101', title: 'Confirm utility shutdown window for east tie-in', module: 'Startup', severity: 'Medium', dueDate: 'Jun 10' },
-      { id: 'ISS-102', title: 'Resolve switchgear comments with engineer of record', module: 'Procurement', severity: 'High', dueDate: 'Jun 12' },
+    contractValue: '$8.4M',
+    latestUpdate: 'Field teams are mobilized. Switchgear release and FAT planning are the two management items to clear this week.',
+    milestones: [
+      { id: 'm-101', name: 'Contract Award', date: '2026-04-22', state: 'Complete' },
+      { id: 'm-102', name: 'Client Kickoff', date: '2026-05-01', state: 'Complete' },
+      { id: 'm-103', name: 'Design Complete', date: '2026-06-07', state: 'At risk' },
+      { id: 'm-104', name: 'Procurement Complete', date: '2026-07-12', state: 'Upcoming' },
+      { id: 'm-105', name: 'FAT Date', date: '2026-07-28', state: 'Upcoming' },
+      { id: 'm-106', name: 'Startup Date', date: '2026-08-19', state: 'Upcoming' },
+      { id: 'm-107', name: 'Closeout', date: '2026-10-15', state: 'Upcoming' },
+    ],
+    readinessItems: [
+      item(projectShells[0], { id: 'RI-101', category: 'Procurement', title: 'Purchase request submitted', owner: 'Avery Grant', dueDate: '2026-06-06', actionRequired: 'Approve switchgear PR and confirm accounting code.', latestUpdate: 'PR is drafted with vendor quote attached.', sourceReference: 'Procurement SOP 2.3', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[0], { id: 'RI-102', category: 'Startup', title: 'FAT required determined', owner: 'Sam Rivera', dueDate: '2026-06-10', actionRequired: 'Confirm FAT requirement with controls lead and client.', latestUpdate: 'Controls package includes witness test language.', sourceReference: 'Startup Playbook FAT gate', state: 'Waiting', active: true, applicable: true }),
+      item(projectShells[0], { id: 'RI-103', category: 'Resources', title: 'Startup resource assigned', owner: 'Jordan Patel', dueDate: '2026-06-25', actionRequired: 'Reserve startup specialist for August window.', latestUpdate: 'Resource manager has two available names.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[0], { id: 'RI-104', category: 'Documentation', title: 'Design review complete', owner: 'Riley Chen', dueDate: '2026-06-04', actionRequired: 'Close final three design review comments.', latestUpdate: 'Two comments require engineer response.', sourceReference: 'Design Quality Checklist', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[0], { id: 'RI-105', category: 'Quality', title: 'Site readiness reviewed', owner: 'Avery Grant', dueDate: '2026-07-09', actionRequired: 'Schedule site readiness walk with superintendent.', latestUpdate: 'Walk not needed until procurement release is locked.', state: 'Not started', active: false, applicable: true }),
     ],
   },
   {
-    id: 'rolme-ls3',
-    projectNumber: 'POC-2402',
-    name: 'ROLME LS3',
+    ...projectShells[1],
     client: 'Rolme County Utilities',
     location: 'Rolme County, OK',
     manager: 'Nina Brooks',
     phase: 'Procurement release',
-    budget: '$3.1M',
-    completion: 42,
-    nextMilestone: 'Pump package award - Jun 21',
-    modules: createModules([
-      { key: 'overall', label: 'Overall status', status: 'Watch', progress: 44, summary: 'Design approvals are complete; procurement float is tightening.', owner: 'Nina Brooks' },
-      { key: 'procurement', label: 'Procurement', status: 'At Risk', progress: 31, summary: 'Long-lead pump package has one incomplete vendor quote.', owner: 'Morgan Lee' },
-      { key: 'resources', label: 'Resources', status: 'On Track', progress: 66, summary: 'Core project team is assigned and subcontractor slots are reserved.', owner: 'Luis Garcia' },
-      { key: 'startup', label: 'Startup', status: 'Watch', progress: 22, summary: 'Startup checklist is awaiting final controls narrative.', owner: 'Sam Rivera' },
-      { key: 'documentation', label: 'Documentation', status: 'On Track', progress: 73, summary: 'Submittal register is active with weekly client distribution.', owner: 'Riley Chen' },
-    ]),
-    issues: [
-      { id: 'ISS-201', title: 'Receive third quote for vertical turbine pump package', module: 'Procurement', severity: 'High', dueDate: 'Jun 7' },
-      { id: 'ISS-202', title: 'Finalize controls startup narrative', module: 'Startup', severity: 'Medium', dueDate: 'Jun 15' },
+    contractValue: '$3.1M',
+    latestUpdate: 'Pump package is driving risk. The team needs a vendor decision and client kickoff confirmation before next huddle.',
+    milestones: [
+      { id: 'm-201', name: 'Contract Award', date: '2026-05-03', state: 'Complete' },
+      { id: 'm-202', name: 'Client Kickoff', date: '2026-06-05', state: 'At risk' },
+      { id: 'm-203', name: 'Design Complete', date: '2026-06-18', state: 'Upcoming' },
+      { id: 'm-204', name: 'Procurement Complete', date: '2026-07-02', state: 'Upcoming' },
+      { id: 'm-205', name: 'Startup Date', date: '2026-09-09', state: 'Upcoming' },
+      { id: 'm-206', name: 'Closeout', date: '2026-11-01', state: 'Upcoming' },
+    ],
+    readinessItems: [
+      item(projectShells[1], { id: 'RI-201', category: 'Procurement', title: 'Long lead items identified', owner: 'Nina Brooks', dueDate: '2026-06-07', actionRequired: 'Decide whether pump package is early release.', latestUpdate: 'Two quotes received; third vendor has not responded.', sourceReference: 'Long Lead Procurement Standard', state: 'Waiting', active: true, applicable: true }),
+      item(projectShells[1], { id: 'RI-202', category: 'Procurement', title: 'Purchase request submitted', owner: 'Nina Brooks', dueDate: '2026-06-12', actionRequired: 'Submit PR once vendor decision is made.', latestUpdate: 'PR shell exists but cannot route without award decision.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[1], { id: 'RI-203', category: 'Startup', title: 'Startup plan complete', owner: 'Sam Rivera', dueDate: '2026-06-27', actionRequired: 'Draft startup sequence around controls narrative.', latestUpdate: 'Controls narrative due from design on Jun 14.', sourceReference: 'Startup Planning Standard', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[1], { id: 'RI-204', category: 'Documentation', title: 'Sales-to-PM transition meeting complete', owner: 'Nina Brooks', dueDate: '2026-06-04', actionRequired: 'Hold transition meeting and capture assumptions.', latestUpdate: 'Estimator is available Thursday afternoon.', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[1], { id: 'RI-205', category: 'Quality', title: 'FAT procedure complete', owner: 'Sam Rivera', dueDate: '2026-08-01', actionRequired: 'No action until FAT requirement is confirmed.', latestUpdate: 'FAT may not apply to selected pump package.', state: 'Not started', active: false, applicable: false }),
     ],
   },
   {
-    id: 'huntv-well-13',
-    projectNumber: 'POC-2403',
-    name: 'HUNTV Well 13',
+    ...projectShells[2],
     client: 'Hunt Valley Water Authority',
     location: 'Hunt Valley, NM',
     manager: 'Elena Wright',
     phase: 'Construction',
-    budget: '$5.7M',
-    completion: 58,
-    nextMilestone: 'Wellhead mechanical rough-in - Jun 24',
-    modules: createModules([
-      { key: 'overall', label: 'Overall status', status: 'On Track', progress: 61, summary: 'Civil work is complete and mechanical rough-in is progressing.', owner: 'Elena Wright' },
-      { key: 'procurement', label: 'Procurement', status: 'On Track', progress: 69, summary: 'Major equipment has purchase orders issued and tracked delivery dates.', owner: 'Morgan Lee' },
-      { key: 'resources', label: 'Resources', status: 'Watch', progress: 54, summary: 'Instrumentation technician availability is constrained in July.', owner: 'Jordan Patel' },
-      { key: 'startup', label: 'Startup', status: 'Watch', progress: 35, summary: 'Factory test dates are tentative pending VFD confirmation.', owner: 'Sam Rivera' },
-      { key: 'documentation', label: 'Documentation', status: 'On Track', progress: 77, summary: 'Inspection records and RFIs are up to date.', owner: 'Riley Chen' },
-    ]),
-    issues: [
-      { id: 'ISS-301', title: 'Confirm July instrumentation technician coverage', module: 'Resources', severity: 'Medium', dueDate: 'Jun 14' },
+    contractValue: '$5.7M',
+    latestUpdate: 'Construction is stable, but July technician availability and shipment tracking need planning before the month-end resource review.',
+    milestones: [
+      { id: 'm-301', name: 'Contract Award', date: '2026-03-28', state: 'Complete' },
+      { id: 'm-302', name: 'Client Kickoff', date: '2026-04-08', state: 'Complete' },
+      { id: 'm-303', name: 'Design Complete', date: '2026-05-23', state: 'Complete' },
+      { id: 'm-304', name: 'Procurement Complete', date: '2026-06-21', state: 'Upcoming' },
+      { id: 'm-305', name: 'FAT Date', date: '2026-07-15', state: 'Upcoming' },
+      { id: 'm-306', name: 'Startup Date', date: '2026-08-05', state: 'Upcoming' },
+      { id: 'm-307', name: 'SAT Date', date: '2026-08-18', state: 'Upcoming' },
+    ],
+    readinessItems: [
+      item(projectShells[2], { id: 'RI-301', category: 'Resources', title: 'Startup resource assigned', owner: 'Elena Wright', dueDate: '2026-06-14', actionRequired: 'Confirm instrumentation technician availability for July.', latestUpdate: 'Shared technician is currently double-booked.', state: 'Waiting', active: true, applicable: true }),
+      item(projectShells[2], { id: 'RI-302', category: 'Procurement', title: 'Shipment tracking confirmed', owner: 'Elena Wright', dueDate: '2026-06-20', actionRequired: 'Get VFD ship date from supplier.', latestUpdate: 'Supplier promised tracking by Jun 12.', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[2], { id: 'RI-303', category: 'Startup', title: 'FAT resources assigned', owner: 'Sam Rivera', dueDate: '2026-06-28', actionRequired: 'Assign controls witness for FAT date.', latestUpdate: 'FAT date is tentative pending VFD tracking.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[2], { id: 'RI-304', category: 'Documentation', title: 'Design review complete', owner: 'Riley Chen', dueDate: '2026-05-22', actionRequired: 'No action required.', latestUpdate: 'Review closed with comments archived.', state: 'Complete', active: true, applicable: true }),
     ],
   },
   {
-    id: 'waukc-beechnut',
-    projectNumber: 'POC-2404',
-    name: 'WAUKC Beechnut',
+    ...projectShells[3],
     client: 'Wauk County Public Works',
     location: 'Beechnut, KS',
     manager: 'Marcus Stone',
     phase: 'Design closeout',
-    budget: '$6.2M',
-    completion: 35,
-    nextMilestone: '90% design package - Jun 28',
-    modules: createModules([
-      { key: 'overall', label: 'Overall status', status: 'Watch', progress: 37, summary: 'Design package is close, but permitting comments remain open.', owner: 'Marcus Stone' },
-      { key: 'procurement', label: 'Procurement', status: 'Watch', progress: 29, summary: 'Procurement strategy is drafted for early valve release.', owner: 'Morgan Lee' },
-      { key: 'resources', label: 'Resources', status: 'On Track', progress: 63, summary: 'Estimating and project controls support are assigned.', owner: 'Luis Garcia' },
-      { key: 'startup', label: 'Startup', status: 'On Track', progress: 18, summary: 'Startup scope is identified with no immediate constraints.', owner: 'Sam Rivera' },
-      { key: 'documentation', label: 'Documentation', status: 'At Risk', progress: 41, summary: 'Permit response matrix needs consolidation before resubmittal.', owner: 'Riley Chen' },
-    ]),
-    issues: [
-      { id: 'ISS-401', title: 'Consolidate county permit response matrix', module: 'Documentation', severity: 'High', dueDate: 'Jun 9' },
-      { id: 'ISS-402', title: 'Decide early-release valve package boundaries', module: 'Procurement', severity: 'Medium', dueDate: 'Jun 16' },
+    contractValue: '$6.2M',
+    latestUpdate: 'Permit response and early-release valve boundaries are the manager huddle topics. Design package can proceed after those decisions.',
+    milestones: [
+      { id: 'm-401', name: 'Contract Award', date: '2026-05-12', state: 'Complete' },
+      { id: 'm-402', name: 'Client Kickoff', date: '2026-05-20', state: 'Complete' },
+      { id: 'm-403', name: 'Design Complete', date: '2026-06-09', state: 'At risk' },
+      { id: 'm-404', name: 'Procurement Complete', date: '2026-07-18', state: 'Upcoming' },
+      { id: 'm-405', name: 'FDT Date', date: '2026-08-11', state: 'Upcoming' },
+      { id: 'm-406', name: 'Startup Date', date: '2026-09-03', state: 'Upcoming' },
+      { id: 'm-407', name: 'Closeout', date: '2026-10-20', state: 'Upcoming' },
+    ],
+    readinessItems: [
+      item(projectShells[3], { id: 'RI-401', category: 'Documentation', title: 'Design review complete', owner: 'Marcus Stone', dueDate: '2026-06-06', actionRequired: 'Consolidate county permit response matrix.', latestUpdate: 'Responses live in three separate review logs.', sourceReference: 'Design Quality Checklist', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[3], { id: 'RI-402', category: 'Procurement', title: 'Long lead items identified', owner: 'Marcus Stone', dueDate: '2026-06-16', actionRequired: 'Decide early-release valve package boundaries.', latestUpdate: 'Estimator flagged potential valve lead time issue.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[3], { id: 'RI-403', category: 'Issues', title: 'Client kickoff scheduled', owner: 'Marcus Stone', dueDate: '2026-06-03', actionRequired: 'Confirm recurring decision meeting with client.', latestUpdate: 'Client requested a new recurring time.', state: 'Waiting', active: true, applicable: true }),
+      item(projectShells[3], { id: 'RI-404', category: 'Quality', title: 'Punchlist complete', owner: 'Riley Chen', dueDate: '2026-09-15', actionRequired: 'No action until construction work starts.', latestUpdate: 'Punchlist phase is not active.', state: 'Not started', active: false, applicable: true }),
     ],
   },
   {
-    id: 'nppwd-pfas',
-    projectNumber: 'POC-2405',
-    name: 'NPPWD PFAS',
+    ...projectShells[4],
     client: 'North Plains Public Water District',
     location: 'North Plains, CO',
     manager: 'Priya Shah',
     phase: 'Startup planning',
-    budget: '$12.8M',
-    completion: 71,
-    nextMilestone: 'Media vessel delivery - Jun 19',
-    modules: createModules([
-      { key: 'overall', label: 'Overall status', status: 'On Track', progress: 74, summary: 'Treatment train installation is trending ahead of baseline.', owner: 'Priya Shah' },
-      { key: 'procurement', label: 'Procurement', status: 'On Track', progress: 83, summary: 'PFAS media vessels are in transit with receiving crew scheduled.', owner: 'Morgan Lee' },
-      { key: 'resources', label: 'Resources', status: 'On Track', progress: 79, summary: 'Startup specialists and vendor representatives are confirmed.', owner: 'Jordan Patel' },
-      { key: 'startup', label: 'Startup', status: 'On Track', progress: 57, summary: 'Startup sequence is approved and sampling plan is in review.', owner: 'Sam Rivera' },
-      { key: 'documentation', label: 'Documentation', status: 'Watch', progress: 62, summary: 'O&M manual drafts are missing two vendor sections.', owner: 'Riley Chen' },
-    ]),
-    issues: [
-      { id: 'ISS-501', title: 'Receive missing vendor O&M manual sections', module: 'Documentation', severity: 'Medium', dueDate: 'Jun 17' },
+    contractValue: '$12.8M',
+    latestUpdate: 'Startup is trending well. Documentation closeout and warranty letter timing need planning before the SAT window.',
+    milestones: [
+      { id: 'm-501', name: 'Contract Award', date: '2026-02-18', state: 'Complete' },
+      { id: 'm-502', name: 'Client Kickoff', date: '2026-02-28', state: 'Complete' },
+      { id: 'm-503', name: 'Design Complete', date: '2026-04-24', state: 'Complete' },
+      { id: 'm-504', name: 'Procurement Complete', date: '2026-06-02', state: 'Complete' },
+      { id: 'm-505', name: 'FAT Date', date: '2026-06-18', state: 'Upcoming' },
+      { id: 'm-506', name: 'Startup Date', date: '2026-07-08', state: 'Upcoming' },
+      { id: 'm-507', name: 'SAT Date', date: '2026-07-22', state: 'Upcoming' },
+      { id: 'm-508', name: 'Closeout', date: '2026-09-05', state: 'Upcoming' },
+    ],
+    readinessItems: [
+      item(projectShells[4], { id: 'RI-501', category: 'Documentation', title: 'Warranty letter sent', owner: 'Priya Shah', dueDate: '2026-06-17', actionRequired: 'Draft warranty letter for client review.', latestUpdate: 'Contract terms confirmed with legal.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[4], { id: 'RI-502', category: 'Startup', title: 'Startup plan complete', owner: 'Priya Shah', dueDate: '2026-06-21', actionRequired: 'Add sampling roles to startup plan.', latestUpdate: 'Vendor rep and lab courier confirmed.', sourceReference: 'Startup Planning Standard', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[4], { id: 'RI-503', category: 'Quality', title: 'FAT procedure complete', owner: 'Sam Rivera', dueDate: '2026-06-08', actionRequired: 'Approve PFAS media skid FAT procedure.', latestUpdate: 'Procedure is in final technical review.', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[4], { id: 'RI-504', category: 'Documentation', title: 'Project closeout complete', owner: 'Riley Chen', dueDate: '2026-09-05', actionRequired: 'No current action required.', latestUpdate: 'Closeout phase opens after SAT.', state: 'Not started', active: false, applicable: true }),
     ],
   },
 ];
 
-export const purchaseRequests: PurchaseRequest[] = [
-  { id: 'PR-2401', projectId: 'elmhc-bundle-5', projectName: 'ELMHC Bundle 5', description: 'Medium voltage switchgear release package', requester: 'Morgan Lee', status: 'Submitted', requiredBy: 'Jun 12', value: '$410K' },
-  { id: 'PR-2402', projectId: 'rolme-ls3', projectName: 'ROLME LS3', description: 'Vertical turbine pump package', requester: 'Nina Brooks', status: 'Draft', requiredBy: 'Jun 21', value: '$285K' },
-  { id: 'PR-2403', projectId: 'huntv-well-13', projectName: 'HUNTV Well 13', description: 'VFD and controls cabinet', requester: 'Elena Wright', status: 'Approved', requiredBy: 'Jun 18', value: '$165K' },
-  { id: 'PR-2404', projectId: 'waukc-beechnut', projectName: 'WAUKC Beechnut', description: 'Early-release valve package', requester: 'Marcus Stone', status: 'Submitted', requiredBy: 'Jun 26', value: '$92K' },
-  { id: 'PR-2405', projectId: 'nppwd-pfas', projectName: 'NPPWD PFAS', description: 'Startup sampling kits and lab coolers', requester: 'Priya Shah', status: 'Ordered', requiredBy: 'Jun 15', value: '$18K' },
-];
+export const readinessItems = projects.flatMap((project) => project.readinessItems);
 
-export const materialItems: MaterialItem[] = [
-  { id: 'MAT-118', projectId: 'elmhc-bundle-5', projectName: 'ELMHC Bundle 5', item: 'ATS control panels', supplier: 'Metro Controls', status: 'RFQ', needDate: 'Jul 8', risk: 'Medium' },
-  { id: 'MAT-119', projectId: 'rolme-ls3', projectName: 'ROLME LS3', item: 'Vertical turbine pumps', supplier: 'Summit Pumpworks', status: 'Spec Review', needDate: 'Aug 2', risk: 'High' },
-  { id: 'MAT-120', projectId: 'huntv-well-13', projectName: 'HUNTV Well 13', item: 'Stainless discharge piping', supplier: 'High Desert Pipe', status: 'PO Issued', needDate: 'Jul 1', risk: 'Low' },
-  { id: 'MAT-121', projectId: 'waukc-beechnut', projectName: 'WAUKC Beechnut', item: 'Butterfly valves', supplier: 'Prairie Valve Co.', status: 'RFQ', needDate: 'Aug 16', risk: 'Medium' },
-  { id: 'MAT-122', projectId: 'nppwd-pfas', projectName: 'NPPWD PFAS', item: 'PFAS media vessels', supplier: 'ClearWater Systems', status: 'In Transit', needDate: 'Jun 19', risk: 'Low' },
-];
+const dayInMs = 1000 * 60 * 60 * 24;
+
+export const daysUntil = (date: string) => Math.ceil((new Date(`${date}T12:00:00`).getTime() - today.getTime()) / dayInMs);
+
+export const getReadinessStatus = (readinessItem: ReadinessItem): ReadinessStatus => {
+  if (!readinessItem.applicable || !readinessItem.active) {
+    return 'Gray';
+  }
+
+  if (readinessItem.state === 'Complete') {
+    return 'Green';
+  }
+
+  const days = daysUntil(readinessItem.dueDate);
+
+  if (days <= 7) {
+    return 'Red';
+  }
+
+  if (days <= 30) {
+    return 'Yellow';
+  }
+
+  return 'Green';
+};
+
+export const formatDate = (date: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(`${date}T12:00:00`));
 
 export const getProjectById = (id: string | undefined) => projects.find((project) => project.id === id);
+
+export const getUpcomingMilestones = (limit = 8) => projects
+  .flatMap((project) => project.milestones.map((milestone) => ({ ...milestone, projectId: project.id, projectName: project.name, projectNumber: project.projectNumber, manager: project.manager })))
+  .filter((milestone) => milestone.state !== 'Complete')
+  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  .slice(0, limit);
+
+export const getCategorySummaries = (items = readinessItems): CategorySummary[] => readinessCategories.map((category) => {
+  const categoryItems = items.filter((readinessItem) => readinessItem.category === category);
+  const counts = categoryItems.reduce(
+    (summary, readinessItem) => {
+      summary[getReadinessStatus(readinessItem).toLowerCase() as Lowercase<ReadinessStatus>] += 1;
+      return summary;
+    },
+    { red: 0, yellow: 0, green: 0, gray: 0 },
+  );
+
+  return {
+    category,
+    icon: categoryIcons[category],
+    ...counts,
+    totalActive: categoryItems.filter((readinessItem) => getReadinessStatus(readinessItem) !== 'Gray').length,
+    attention: counts.red > 0 ? 'Action this week' : counts.yellow > 0 ? 'Plan this month' : 'No current attention',
+  };
+});
+
+export const getProjectAttentionScore = (project: Project) => project.readinessItems.reduce((score, readinessItem) => {
+  const status = getReadinessStatus(readinessItem);
+  if (status === 'Red') return score + 3;
+  if (status === 'Yellow') return score + 1;
+  return score;
+}, 0);

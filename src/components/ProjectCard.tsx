@@ -1,20 +1,18 @@
 import { ArrowRight, BriefcaseBusiness, CalendarClock, MapPin, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { ModuleKey, ModuleStatus, Project } from '../data/mockData';
-import { ProgressBar } from './ProgressBar';
+import { formatDate, getProjectAttentionScore, getReadinessStatus, type Project } from '../data/mockData';
 import { StatusBadge } from './StatusBadge';
 
 interface ProjectCardProps {
   project: Project;
 }
 
-const moduleOrder: ModuleKey[] = ['procurement', 'resources', 'startup', 'documentation'];
-
 export function ProjectCard({ project }: ProjectCardProps) {
-  const overall = project.modules.find((module) => module.key === 'overall');
-  const supportingModules = moduleOrder
-    .map((key) => project.modules.find((module) => module.key === key))
-    .filter((module): module is ModuleStatus => Boolean(module));
+  const redItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Red');
+  const yellowItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Yellow');
+  const nextMilestone = project.milestones.find((milestone) => milestone.state !== 'Complete');
+  const topAttentionItem = [...redItems, ...yellowItems][0];
+  const attentionScore = getProjectAttentionScore(project);
 
   return (
     <article className="project-card">
@@ -23,7 +21,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <p className="eyebrow">{project.projectNumber}</p>
           <h3>{project.name}</h3>
         </div>
-        {overall && <StatusBadge status={overall.status} />}
+        <div className="attention-counts" aria-label={`${project.name} readiness attention counts`}>
+          <span className="count-pill count-pill--red">{redItems.length} red</span>
+          <span className="count-pill count-pill--yellow">{yellowItems.length} yellow</span>
+        </div>
       </div>
 
       <dl className="project-card__facts" aria-label={`${project.name} key facts`}>
@@ -49,29 +50,32 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <dt>
             <CalendarClock size={15} /> Next milestone
           </dt>
-          <dd>{project.nextMilestone}</dd>
+          <dd>{nextMilestone ? `${nextMilestone.name} - ${formatDate(nextMilestone.date)}` : 'No active milestones'}</dd>
         </div>
       </dl>
 
-      <div className="project-card__progress">
-        <div>
-          <span>Completion</span>
-          <strong>{project.completion}%</strong>
-        </div>
-        <ProgressBar value={project.completion} label={`${project.name} completion`} />
-      </div>
-
-      <div className="project-card__modules" aria-label={`${project.name} module status summary`}>
-        {supportingModules.map((module) => (
-          <div key={module.key}>
-            <span>{module.label}</span>
-            <StatusBadge status={module.status} />
-          </div>
-        ))}
+      <div className="attention-panel">
+        <span>Huddle reason</span>
+        {topAttentionItem ? (
+          <>
+            <strong>{topAttentionItem.title}</strong>
+            <p>{topAttentionItem.actionRequired}</p>
+            <div className="attention-panel__meta">
+              <StatusBadge status={getReadinessStatus(topAttentionItem)} />
+              <span>{topAttentionItem.category}</span>
+              <span>Due {formatDate(topAttentionItem.dueDate)}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <strong>No current management attention</strong>
+            <p>Active readiness items are green or not yet applicable.</p>
+          </>
+        )}
       </div>
 
       <div className="project-card__footer">
-        <span>{project.phase}</span>
+        <span>{project.phase} · attention score {attentionScore}</span>
         <Link to={`/projects/${project.id}`} aria-label={`View ${project.name} details`}>
           View details <ArrowRight size={16} />
         </Link>
