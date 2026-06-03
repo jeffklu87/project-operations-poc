@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarClock, UserRound } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, CalendarClock, MapPin, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ModuleKey, ModuleStatus, Project } from '../data/mockData';
 import { ProgressBar } from './ProgressBar';
@@ -26,29 +26,32 @@ export function ProjectCard({ project }: ProjectCardProps) {
         {overall && <StatusBadge status={overall.status} />}
       </div>
 
-      <div className="project-card__meta-grid" aria-label={`${project.name} primary project information`}>
+      <dl className="project-card__facts" aria-label={`${project.name} key facts`}>
         <div>
-          <span>
+          <dt>
+            <BriefcaseBusiness size={15} /> Client
+          </dt>
+          <dd>{project.client}</dd>
+        </div>
+        <div>
+          <dt>
             <UserRound size={15} /> PM
-          </span>
-          <strong>{project.manager}</strong>
+          </dt>
+          <dd>{project.manager}</dd>
         </div>
         <div>
-          <span>
-            <CalendarClock size={15} /> Next milestone
-          </span>
-          <strong>{project.nextMilestone}</strong>
+          <dt>
+            <MapPin size={15} /> Location
+          </dt>
+          <dd>{project.location}</dd>
         </div>
-      </div>
-
-      <div className="project-card__modules" aria-label={`${project.name} module status summary`}>
-        {supportingModules.map((module) => (
-          <div className="module-status-row" key={module.key}>
-            <span>{module.label}</span>
-            <StatusBadge status={module.status} />
-          </div>
-        ))}
-      </div>
+        <div>
+          <dt>
+            <CalendarClock size={15} /> Next milestone
+          </dt>
+          <dd>{project.nextMilestone}</dd>
+        </div>
+      </dl>
 
       <div className="project-card__progress">
         <div>
@@ -56,6 +59,15 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <strong>{project.completion}%</strong>
         </div>
         <ProgressBar value={project.completion} label={`${project.name} completion`} />
+      </div>
+
+      <div className="project-card__modules" aria-label={`${project.name} module status summary`}>
+        {supportingModules.map((module) => (
+          <div key={module.key}>
+            <span>{module.label}</span>
+            <StatusBadge status={module.status} />
+          </div>
+        ))}
       </div>
 
       <div className="project-card__footer">

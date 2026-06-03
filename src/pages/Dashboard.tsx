@@ -1,4 +1,4 @@
-import { AlertTriangle, ClipboardList, PackageX, Rocket } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, ClipboardList } from 'lucide-react';
 import { ModuleSummaryCard } from '../components/ModuleSummaryCard';
 import { ProjectCard } from '../components/ProjectCard';
 import { projects, type StatusLevel } from '../data/mockData';
@@ -10,22 +10,11 @@ const getModuleAverage = (key: (typeof moduleKeys)[number]) => {
   return Math.round(total / projects.length);
 };
 
-const atRiskProjects = projects.filter((project) =>
-  project.modules.some((module) => module.status === 'At Risk' || module.status === 'Blocked'),
-).length;
-
-const procurementIssues = projects.filter((project) => {
-  const procurement = project.modules.find((module) => module.key === 'procurement');
-  return procurement?.status === 'Watch' || procurement?.status === 'At Risk' || procurement?.status === 'Blocked';
-}).length;
-
-const startupReadiness = getModuleAverage('startup');
-
 const dashboardMetrics = [
-  { label: 'Active Projects', value: projects.length, icon: ClipboardList, detail: 'Projects in the current operations portfolio' },
-  { label: 'At Risk Projects', value: atRiskProjects, icon: AlertTriangle, detail: 'Projects with a red module status requiring escalation' },
-  { label: 'Procurement Issues', value: procurementIssues, icon: PackageX, detail: 'Projects with procurement watch or risk indicators' },
-  { label: 'Startup Readiness', value: `${startupReadiness}%`, icon: Rocket, detail: 'Average startup module readiness across projects' },
+  { label: 'Active projects', value: projects.length, icon: ClipboardList, detail: 'Across water, utility, and campus work' },
+  { label: 'On-track modules', value: projects.flatMap((project) => project.modules).filter((module) => module.status === 'On Track').length, icon: CheckCircle2, detail: 'Operational modules in good standing' },
+  { label: 'Watch / at-risk modules', value: projects.flatMap((project) => project.modules).filter((module) => module.status === 'Watch' || module.status === 'At Risk').length, icon: AlertTriangle, detail: 'Need project team attention' },
+  { label: 'Average completion', value: `${Math.round(projects.reduce((sum, project) => sum + project.completion, 0) / projects.length)}%`, icon: Activity, detail: 'Portfolio construction readiness' },
 ];
 
 export function Dashboard() {
@@ -45,14 +34,19 @@ export function Dashboard() {
 
   return (
     <section className="page-stack">
-      <div className="dashboard-intro">
+      <div className="hero-panel">
         <div>
-          <p className="eyebrow">Portfolio control center</p>
-          <h2>Project health, operational risk, and module readiness at a glance</h2>
+          <p className="eyebrow">Project Operations PoC</p>
+          <h1>Operational status command center</h1>
+          <p>
+            Monitor procurement, resources, startup readiness, and documentation health using realistic mock data before backend integration.
+          </p>
         </div>
-        <p>
-          A mock-data dashboard focused on project operations, procurement pressure, resources, startup readiness, and documentation follow-through.
-        </p>
+        <div className="hero-panel__callout">
+          <span>Portfolio pulse</span>
+          <strong>Managed visibility</strong>
+          <p>Built for weekly project reviews and executive status standups.</p>
+        </div>
       </div>
 
       <div className="metric-grid">
@@ -75,10 +69,10 @@ export function Dashboard() {
 
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Projects</p>
-          <h2>Operations portfolio</h2>
+          <p className="eyebrow">Dashboard</p>
+          <h2>Project cards</h2>
         </div>
-        <span>{projects.length} active projects</span>
+        <span>{projects.length} mock projects</span>
       </div>
       <div className="project-grid">
         {projects.map((project) => (
