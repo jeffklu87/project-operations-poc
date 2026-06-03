@@ -1,4 +1,3 @@
-import { CircleDot } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ModuleSummaryCard } from '../components/ModuleSummaryCard';
 import { StatusBadge } from '../components/StatusBadge';
@@ -10,7 +9,20 @@ import {
   getUpcomingMilestones,
   projects,
   readinessItems,
+  type ReadinessItem,
 } from '../data/mockData';
+
+const DiscussionItemRow = ({ item }: { item: ReadinessItem }) => (
+  <Link className="compact-action-row" to={`/projects/${item.projectId}`}>
+    <StatusBadge status={getReadinessStatus(item)} />
+    <strong>{item.projectNumber}</strong>
+    <span>{item.projectName}</span>
+    <span>{item.category}</span>
+    <span>{item.owner}</span>
+    <strong>{formatDate(item.dueDate)}</strong>
+    <span>{item.actionRequired}</span>
+  </Link>
+);
 
 export function Dashboard() {
   const redItems = readinessItems.filter((item) => getReadinessStatus(item) === 'Red');
@@ -22,80 +34,33 @@ export function Dashboard() {
   const categorySummaries = getCategorySummaries();
 
   return (
-    <section className="page-stack">
-      <div className="hero-panel hero-panel--compact">
+    <section className="page-stack page-stack--dense">
+      <header className="huddle-header">
         <div>
           <p className="eyebrow">Manager huddle</p>
-          <h1>What needs attention before the next project huddle?</h1>
-          <p>
-            Start with red items, then yellow planning items, then the projects that need discussion. Supporting context stays below the action list.
-          </p>
+          <h1>Discussion board</h1>
         </div>
-      </div>
+        <div className="huddle-header__counts" aria-label="Huddle summary counts">
+          <span className="count-pill count-pill--red">{redItems.length} red</span>
+          <span className="count-pill count-pill--yellow">{yellowItems.length} yellow</span>
+          <span>{projectsNeedingAttention.length} projects for discussion</span>
+        </div>
+      </header>
 
-      <div className="split-grid split-grid--priority">
-        <section className="priority-panel priority-panel--red">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Action this week</p>
-              <h2>Red readiness items</h2>
-            </div>
-            <span>{redItems.length} open</span>
-          </div>
-          <div className="item-list">
-            {redItems.map((item) => (
-              <Link className="readiness-row" to={`/projects/${item.projectId}`} key={item.id}>
-                <StatusBadge status="Red" />
-                <div>
-                  <strong>{item.title}</strong>
-                  <p>{item.projectNumber} - {item.projectName}</p>
-                  <span>{item.actionRequired}</span>
-                </div>
-                <div className="row-meta">
-                  <span>{item.owner}</span>
-                  <strong>{formatDate(item.dueDate)}</strong>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="priority-panel priority-panel--yellow">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Plan this month</p>
-              <h2>Yellow readiness items</h2>
-            </div>
-            <span>{yellowItems.length} open</span>
-          </div>
-          <div className="item-list">
-            {yellowItems.map((item) => (
-              <Link className="readiness-row" to={`/projects/${item.projectId}`} key={item.id}>
-                <StatusBadge status="Yellow" />
-                <div>
-                  <strong>{item.title}</strong>
-                  <p>{item.projectNumber} - {item.projectName}</p>
-                  <span>{item.actionRequired}</span>
-                </div>
-                <div className="row-meta">
-                  <span>{item.owner}</span>
-                  <strong>{formatDate(item.dueDate)}</strong>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <section className="huddle-list">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Discussion list</p>
-            <h2>Projects requiring huddle discussion</h2>
-          </div>
+      <section className="dense-panel">
+        <div className="dense-panel__heading">
+          <h2>Projects requiring discussion</h2>
           <span>{projectsNeedingAttention.length} projects</span>
         </div>
-        <div className="huddle-grid">
+        <div className="discussion-table" role="table" aria-label="Projects requiring huddle discussion">
+          <div className="discussion-table__header" role="row">
+            <span>Project</span>
+            <span>PM</span>
+            <span>Phase</span>
+            <span>Red</span>
+            <span>Yellow</span>
+            <span>Primary discussion topic</span>
+          </div>
           {projectsNeedingAttention.map((project) => {
             const redCount = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Red').length;
             const yellowCount = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Yellow').length;
@@ -103,31 +68,70 @@ export function Dashboard() {
               ?? project.readinessItems.find((item) => getReadinessStatus(item) === 'Yellow');
 
             return (
-              <Link className="huddle-card" to={`/projects/${project.id}`} key={project.id}>
-                <CircleDot size={18} />
-                <div>
-                  <strong>{project.name}</strong>
-                  <p>{project.manager} - {topItem?.actionRequired ?? project.phase}</p>
-                </div>
-                <div className="attention-counts">
-                  <span className="count-pill count-pill--red">{redCount} red</span>
-                  <span className="count-pill count-pill--yellow">{yellowCount} yellow</span>
-                </div>
+              <Link className="discussion-table__row" to={`/projects/${project.id}`} key={project.id}>
+                <strong>{project.projectNumber} - {project.name}</strong>
+                <span>{project.manager}</span>
+                <span>{project.phase}</span>
+                <span className="count-pill count-pill--red">{redCount}</span>
+                <span className="count-pill count-pill--yellow">{yellowCount}</span>
+                <span>{topItem?.actionRequired ?? project.latestUpdate}</span>
               </Link>
             );
           })}
         </div>
       </section>
 
-      <div className="split-grid">
-        <section className="table-card">
-          <div className="section-heading section-heading--inset">
-            <div>
-              <p className="eyebrow">Supporting context</p>
-              <h2>Upcoming milestones</h2>
-            </div>
+      <div className="split-grid split-grid--priority split-grid--dense">
+        <section className="dense-panel dense-panel--red">
+          <div className="dense-panel__heading">
+            <h2>Red items</h2>
+            <span>Action this week</span>
           </div>
-          <div className="responsive-table">
+          <div className="compact-action-list">
+            <div className="compact-action-list__header">
+              <span>Status</span>
+              <span>No.</span>
+              <span>Project</span>
+              <span>Category</span>
+              <span>Owner</span>
+              <span>Due</span>
+              <span>Action required</span>
+            </div>
+            {redItems.map((item) => (
+              <DiscussionItemRow item={item} key={item.id} />
+            ))}
+          </div>
+        </section>
+
+        <section className="dense-panel dense-panel--yellow">
+          <div className="dense-panel__heading">
+            <h2>Yellow items</h2>
+            <span>Plan this month</span>
+          </div>
+          <div className="compact-action-list">
+            <div className="compact-action-list__header">
+              <span>Status</span>
+              <span>No.</span>
+              <span>Project</span>
+              <span>Category</span>
+              <span>Owner</span>
+              <span>Due</span>
+              <span>Action required</span>
+            </div>
+            {yellowItems.map((item) => (
+              <DiscussionItemRow item={item} key={item.id} />
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="split-grid split-grid--support">
+        <section className="dense-panel">
+          <div className="dense-panel__heading">
+            <h2>Upcoming milestones</h2>
+            <span>{upcomingMilestones.length} next dates</span>
+          </div>
+          <div className="responsive-table responsive-table--compact">
             <table>
               <thead>
                 <tr>
@@ -151,14 +155,12 @@ export function Dashboard() {
           </div>
         </section>
 
-        <section>
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Category scan</p>
-              <h2>Where attention is concentrated</h2>
-            </div>
+        <section className="dense-panel">
+          <div className="dense-panel__heading">
+            <h2>Category scan</h2>
+            <span>red/yellow concentration</span>
           </div>
-          <div className="category-stack">
+          <div className="category-stack category-stack--compact">
             {categorySummaries.map((summary) => (
               <ModuleSummaryCard key={summary.category} module={summary} />
             ))}
