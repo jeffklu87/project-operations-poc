@@ -43,6 +43,16 @@ export function ProjectDetail() {
     ...currentDeliverables.map((deliverable) => `${deliverable.name} ${deliverable.state.toLowerCase()}`),
     ...currentQualityGates.map((gate) => gate.name),
   ].slice(0, 5);
+  const deliverableSummary = {
+    total: project.deliverables.length,
+    complete: project.deliverables.filter((deliverable) => deliverable.state === 'Complete').length,
+    atRisk: project.deliverables.filter((deliverable) => deliverable.state === 'At risk' || deliverable.state === 'Missing').length,
+    upcoming: project.deliverables.filter((deliverable) => deliverable.state === 'Upcoming').length,
+  };
+  const qualityGateSummary = {
+    pending: project.qualityGates.filter((gate) => gate.status === 'Red' || gate.status === 'Yellow' || gate.status === 'Upcoming').length,
+    complete: project.qualityGates.filter((gate) => gate.status === 'Green').length,
+  };
 
   return (
     <section className="ops-page project-detail-page">
@@ -174,12 +184,19 @@ export function ProjectDetail() {
         </div>
       </section>
 
-      <div className="ops-grid">
-        <section className="ops-panel">
-          <div className="ops-panel__heading">
-            <h2>Deliverables</h2>
-            <span>Automation package readiness</span>
-          </div>
+      <section className="ops-grid supporting-detail-grid" aria-label="Supporting details">
+        <details className="ops-panel attention-disclosure">
+          <summary>
+            <span>
+              <strong>Deliverables</strong>
+              <small>{deliverableSummary.total} total</small>
+            </span>
+            <span className="summary-metrics">
+              <b>{deliverableSummary.complete} Complete</b>
+              <b>{deliverableSummary.atRisk} At Risk</b>
+              <b>{deliverableSummary.upcoming} Upcoming</b>
+            </span>
+          </summary>
           <div className="ops-table ops-table--deliverables">
             <div className="ops-table__header">
               <span>Deliverable</span>
@@ -198,13 +215,19 @@ export function ProjectDetail() {
               </article>
             ))}
           </div>
-        </section>
+        </details>
 
-        <section className="ops-panel">
-          <div className="ops-panel__heading">
-            <h2>Quality Gates</h2>
-            <span>Prepared for VantagePoint compliance</span>
-          </div>
+        <details className="ops-panel attention-disclosure">
+          <summary>
+            <span>
+              <strong>Quality Gates</strong>
+              <small>Prepared for VantagePoint compliance</small>
+            </span>
+            <span className="summary-metrics">
+              <b>{qualityGateSummary.pending} Pending</b>
+              <b>{qualityGateSummary.complete} Complete</b>
+            </span>
+          </summary>
           <div className="ops-table ops-table--quality">
             <div className="ops-table__header">
               <span>Gate</span>
@@ -223,8 +246,8 @@ export function ProjectDetail() {
               </article>
             ))}
           </div>
-        </section>
-      </div>
+        </details>
+      </section>
 
       <section className="category-indicator-row" aria-label="Readiness category indicators">
         {categorySummaries.map((summary) => (
@@ -259,18 +282,23 @@ export function ProjectDetail() {
           </div>
         </section>
 
-        <section className="ops-panel">
-          <div className="ops-panel__heading">
-            <h2>Recent Activity</h2>
-            <span>Latest updates and milestone changes</span>
-          </div>
+        <details className="ops-panel attention-disclosure">
+          <summary>
+            <span>
+              <strong>Recent Activity</strong>
+              <small>{project.recentActivity.length + 1} updates</small>
+            </span>
+            <span className="summary-metrics">
+              <b>Investigation</b>
+            </span>
+          </summary>
           <div className="activity-list">
             <span>{project.latestUpdate}</span>
             {project.recentActivity.map((activity) => (
               <span key={activity}>{activity}</span>
             ))}
           </div>
-        </section>
+        </details>
       </div>
     </section>
   );

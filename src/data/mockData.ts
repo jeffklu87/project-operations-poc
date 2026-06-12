@@ -98,6 +98,15 @@ export interface ResourceConstraint {
   severity: 'Red' | 'Yellow';
 }
 
+export interface OperatingModule {
+  id: string;
+  name: string;
+  decisionSupported: string;
+  signals: string[];
+  output: string;
+  status: 'Active' | 'Planning' | 'Watch';
+}
+
 export interface CategorySummary {
   category: ReadinessCategory;
   icon: LucideIcon;
@@ -371,6 +380,65 @@ export const resourceConstraints: ResourceConstraint[] = [
   { id: 'RC-1', area: 'Startup staffing', constraint: 'Two August startups competing for one specialist.', window: 'Aug 5 - Aug 19', affectedProjects: ['ELMHC Bundle 5', 'HUNTV Well 13'], severity: 'Red' },
   { id: 'RC-2', area: 'Controls engineering capacity', constraint: 'FAT witness coverage not assigned for July dates.', window: 'Jul 15 - Jul 28', affectedProjects: ['ELMHC Bundle 5', 'HUNTV Well 13'], severity: 'Yellow' },
   { id: 'RC-3', area: 'FAT scheduling conflicts', constraint: 'Pump package FAT applicability remains undecided.', window: 'Aug planning', affectedProjects: ['ROLME LS3'], severity: 'Yellow' },
+];
+
+export const operatingModules: OperatingModule[] = [
+  {
+    id: 'project-intelligence',
+    name: 'Project Intelligence',
+    decisionSupported: 'What am I missing?',
+    signals: ['Meeting analysis', 'Procurement analysis', 'Site report analysis', 'Design review analysis'],
+    output: 'Suggested actions, missing readiness items, and milestone impacts.',
+    status: 'Planning',
+  },
+  {
+    id: 'fat-readiness',
+    name: 'FAT Readiness',
+    decisionSupported: 'Can we successfully execute FAT?',
+    signals: ['FAT readiness score', 'Open FAT gaps', 'Witness planning', 'Test procedures'],
+    output: 'FAT blockers, witness gaps, and procedure approval needs.',
+    status: 'Active',
+  },
+  {
+    id: 'startup-readiness',
+    name: 'Startup Readiness',
+    decisionSupported: 'Can we successfully startup?',
+    signals: ['Resource readiness', 'Training readiness', 'Documentation readiness', 'Startup blockers'],
+    output: 'Startup confidence and blocker list by project.',
+    status: 'Active',
+  },
+  {
+    id: 'procurement-operations',
+    name: 'Procurement Operations',
+    decisionSupported: 'What procurement issues threaten delivery?',
+    signals: ['Long lead watchlist', 'Delivery risks', 'Startup-impacting deliveries', 'Vendor concerns'],
+    output: 'Portfolio-wide delivery threats and vendor escalation targets.',
+    status: 'Watch',
+  },
+  {
+    id: 'qaqc-compliance',
+    name: 'QAQC & Compliance',
+    decisionSupported: 'Are we meeting quality and compliance expectations?',
+    signals: ['QAQC gates', 'Compliance status', 'VP-required signoffs', 'Missing reviews'],
+    output: 'Execution-ready compliance packets for VantagePoint record entry.',
+    status: 'Planning',
+  },
+  {
+    id: 'resource-planning',
+    name: 'Resource Planning',
+    decisionSupported: 'Do we have capacity?',
+    signals: ['Startup loading', 'Engineering loading', 'FAT staffing', 'Resource conflicts'],
+    output: 'Capacity conflicts before they become milestone blockers.',
+    status: 'Active',
+  },
+  {
+    id: 'executive-view',
+    name: 'Executive View',
+    decisionSupported: 'Where should leadership focus?',
+    signals: ['Portfolio health', 'Critical risks', 'Major milestones', 'Resource concerns'],
+    output: 'Leadership focus list generated from operational data.',
+    status: 'Watch',
+  },
 ];
 
 const dayInMs = 1000 * 60 * 60 * 24;

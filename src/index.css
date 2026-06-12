@@ -218,6 +218,10 @@ svg {
   gap: 8px;
 }
 
+.metric-strip--compact article {
+  min-height: 54px;
+}
+
 .metric-strip article,
 .ops-panel,
 .project-header,
@@ -390,6 +394,11 @@ svg {
 .ops-table--resources .ops-table__header,
 .ops-table--resources .ops-table__row {
   grid-template-columns: 170px minmax(280px, 1.4fr) 130px minmax(260px, 1fr) 82px;
+}
+
+.ops-table--planning .ops-table__header,
+.ops-table--planning .ops-table__row {
+  grid-template-columns: minmax(210px, 1fr) minmax(320px, 1.4fr) 128px 112px 84px;
 }
 
 .ops-table--mini-milestones .ops-table__header,
@@ -677,6 +686,149 @@ svg {
   color: var(--text-strong);
 }
 
+.attention-project-list {
+  display: grid;
+}
+
+.attention-project {
+  display: grid;
+  grid-template-columns: 26px minmax(260px, 1.2fr) minmax(220px, 0.8fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 860px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.attention-project:last-child {
+  border-bottom: 0;
+}
+
+.attention-project:hover {
+  background: var(--surface-muted);
+}
+
+.attention-project > strong {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  color: var(--text-strong);
+  background: var(--surface-strong);
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+.attention-project span,
+.attention-project p,
+.attention-project small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attention-project span {
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.attention-project p,
+.attention-project small {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.attention-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 8px 10px;
+  color: var(--text-strong);
+  background: var(--surface-muted);
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  list-style: none;
+}
+
+.attention-disclosure[open] > summary {
+  border-bottom-color: var(--border);
+}
+
+.attention-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.attention-disclosure summary span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.attention-disclosure summary strong {
+  font-size: 0.88rem;
+}
+
+.attention-disclosure summary small,
+.summary-metrics b {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.summary-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.summary-metrics b {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  padding: 3px 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.module-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.module-decision {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-height: 132px;
+  padding: 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+.module-decision:nth-child(4n) {
+  border-right: 0;
+}
+
+.module-decision strong {
+  color: var(--text-strong);
+}
+
+.module-decision span,
+.module-decision small {
+  color: var(--text-muted);
+}
+
+.module-decision p {
+  margin: 0;
+  color: var(--text);
+}
+
 .back-link,
 .empty-state a {
   display: inline-flex;
@@ -789,6 +941,7 @@ svg {
   .metric-strip,
   .ops-grid,
   .ops-grid--thirds,
+  .module-decision-grid,
   .milestone-focus,
   .project-header,
   .project-header dl {
@@ -867,6 +1020,7 @@ svg {
   .metric-strip,
   .ops-grid,
   .ops-grid--thirds,
+  .module-decision-grid,
   .milestone-focus,
   .project-header,
   .project-header dl {
