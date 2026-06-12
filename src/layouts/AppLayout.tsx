@@ -1,10 +1,13 @@
-import { Menu, PanelLeftClose, X } from 'lucide-react';
+import { BriefcaseBusiness, CalendarDays, FolderKanban, Layers3, Menu, PanelLeftClose, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const navItems = [
-  { to: '/', label: 'Portfolio Dashboard' },
-  { to: '/pm-queue', label: 'PM Work Queue' },
+  { to: '/', label: 'Portfolio', icon: Layers3 },
+  { to: '/my-work', label: 'My Work', icon: BriefcaseBusiness },
+  { to: '/projects', label: 'Projects', icon: FolderKanban },
+  { to: '/resources', label: 'Resources', icon: Users },
+  { to: '/weekly-review', label: 'Weekly Review', icon: CalendarDays },
 ];
 
 export function AppLayout() {
@@ -12,11 +15,16 @@ export function AppLayout() {
 
   const navigation = (
     <nav className="sidebar__nav" aria-label="Primary navigation">
-      {navItems.map((item) => (
-        <NavLink key={item.to} to={item.to} onClick={() => setMobileNavOpen(false)}>
+      {navItems.map((item) => {
+        const Icon = item.icon;
+
+        return (
+        <NavLink key={item.to} to={item.to} onClick={() => setMobileNavOpen(false)} end={item.to === '/'}>
+          <Icon size={16} />
           {item.label}
         </NavLink>
-      ))}
+        );
+      })}
     </nav>
   );
 
@@ -27,13 +35,13 @@ export function AppLayout() {
           <div className="brand-mark">PO</div>
           <div>
             <strong>Project Ops</strong>
-            <span>Readiness System</span>
+            <span>Operating System</span>
           </div>
         </div>
         {navigation}
         <div className="sidebar__footer">
           <PanelLeftClose size={18} />
-          <span>Mock data workspace</span>
+          <span>Mock operations workspace</span>
         </div>
       </aside>
 
@@ -55,7 +63,7 @@ export function AppLayout() {
                 <div className="brand-mark">PO</div>
                 <div>
                   <strong>Project Ops</strong>
-                  <span>Readiness System</span>
+                  <span>Operating System</span>
                 </div>
               </div>
               <button type="button" className="icon-button" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation menu">

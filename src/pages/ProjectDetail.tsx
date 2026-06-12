@@ -1,6 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { ModuleSummaryCard } from '../components/ModuleSummaryCard';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatDate, getCategorySummaries, getProjectById, getReadinessStatus } from '../data/mockData';
 
@@ -13,148 +12,138 @@ export function ProjectDetail() {
       <section className="empty-state">
         <h1>Project not found</h1>
         <p>The requested mock project does not exist.</p>
-        <Link to="/">Return to dashboard</Link>
+        <Link to="/">Return to portfolio</Link>
       </section>
     );
   }
 
   const redItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Red');
   const yellowItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Yellow');
-  const discussionItems = [...redItems, ...yellowItems];
+  const actionsRequired = project.readinessItems
+    .filter((item) => item.active && item.applicable && item.state !== 'Complete')
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   const categorySummaries = getCategorySummaries(project.readinessItems);
   const nextMilestone = project.milestones.find((milestone) => milestone.state !== 'Complete');
 
   return (
-    <section className="page-stack">
+    <section className="ops-page">
       <Link className="back-link" to="/">
-        <ArrowLeft size={16} /> Back to manager huddle
+        <ArrowLeft size={16} /> Portfolio
       </Link>
 
-      <div className="detail-hero detail-hero--focused">
+      <header className="project-header">
         <div>
-          <p className="eyebrow">{project.projectNumber} - {project.manager}</p>
-          <div className="detail-hero__title">
-            <h1>{project.name}</h1>
-            <div className="attention-counts">
-              <span className="count-pill count-pill--red">{redItems.length} red</span>
-              <span className="count-pill count-pill--yellow">{yellowItems.length} yellow</span>
-            </div>
-          </div>
-          <p>{project.latestUpdate}</p>
+          <p className="eyebrow">{project.projectNumber}</p>
+          <h1>{project.name}</h1>
         </div>
-        <div className="hero-panel__callout">
-          <span>Next milestone</span>
-          <strong>{nextMilestone?.name ?? 'None active'}</strong>
-          {nextMilestone && <p>{formatDate(nextMilestone.date)} - {nextMilestone.state}</p>}
-        </div>
-      </div>
+        <dl>
+          <div><dt>PM</dt><dd>{project.manager}</dd></div>
+          <div><dt>Client</dt><dd>{project.client}</dd></div>
+          <div><dt>Next Milestone</dt><dd>{nextMilestone ? `${nextMilestone.name} ${formatDate(nextMilestone.date)}` : 'None'}</dd></div>
+          <div><dt>Red Count</dt><dd>{redItems.length}</dd></div>
+          <div><dt>Yellow Count</dt><dd>{yellowItems.length}</dd></div>
+        </dl>
+      </header>
 
-      <section className="priority-panel priority-panel--red">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Discuss first</p>
-            <h2>Project discussion items</h2>
-          </div>
-          <span>{discussionItems.length} red/yellow items</span>
+      <section className="ops-panel">
+        <div className="ops-panel__heading">
+          <h2>Milestone Timeline</h2>
+          <span>Dates, state, and readiness gaps</span>
         </div>
-        <div className="item-list">
-          {discussionItems.length === 0 && <p className="empty-inline">No red or yellow discussion items for this project.</p>}
-          {discussionItems.map((item) => (
-            <article className="readiness-row" key={item.id}>
-              <StatusBadge status={getReadinessStatus(item)} />
-              <div>
-                <strong>{item.title}</strong>
-                <p>{item.category} - {item.actionRequired}</p>
-                <span>{item.latestUpdate}</span>
-              </div>
-              <div className="row-meta">
-                <span>{item.owner}</span>
-                <strong>{formatDate(item.dueDate)}</strong>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="table-card">
-        <div className="section-heading section-heading--inset">
-          <div>
-            <p className="eyebrow">Timeline</p>
-            <h2>Key milestones</h2>
-          </div>
-        </div>
-        <div className="milestone-strip">
+        <div className="timeline-row">
           {project.milestones.map((milestone) => (
-            <article className="milestone-card" key={milestone.id}>
+            <article className="timeline-step" key={milestone.id}>
               <StatusBadge status={milestone.state} />
               <strong>{milestone.name}</strong>
               <span>{formatDate(milestone.date)}</span>
+              <p>{milestone.readinessGaps.length ? milestone.readinessGaps.join(', ') : 'No open gaps'}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Readiness categories</p>
-          <h2>Category cards</h2>
+      <section className="ops-panel ops-panel--primary">
+        <div className="ops-panel__heading">
+          <h2>Actions Required</h2>
+          <span>{actionsRequired.length} open actions</span>
         </div>
-      </div>
-      <div className="module-grid">
-        {categorySummaries.map((summary) => (
-          <ModuleSummaryCard key={summary.category} module={summary} />
-        ))}
-      </div>
-
-      <section className="table-card">
-        <div className="section-heading section-heading--inset">
-          <div>
-            <p className="eyebrow">Readiness item table</p>
-            <h2>All actions, owners, due dates, and updates</h2>
+        <div className="ops-table ops-table--project-actions">
+          <div className="ops-table__header">
+            <span>Action</span>
+            <span>Category</span>
+            <span>Owner</span>
+            <span>Due</span>
+            <span>Status</span>
           </div>
-          <span>{project.readinessItems.length} tracked items</span>
-        </div>
-        <div className="responsive-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Status</th>
-                <th>Item</th>
-                <th>Category</th>
-                <th>Owner</th>
-                <th>Due</th>
-                <th>Action required</th>
-                <th>Latest update</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {project.readinessItems.map((item) => (
-                <tr key={item.id}>
-                  <td><StatusBadge status={getReadinessStatus(item)} /></td>
-                  <td>
-                    <strong>{item.title}</strong>
-                    <span>{item.state}</span>
-                  </td>
-                  <td>{item.category}</td>
-                  <td>{item.owner}</td>
-                  <td>{formatDate(item.dueDate)}</td>
-                  <td>{item.actionRequired}</td>
-                  <td>{item.latestUpdate}</td>
-                  <td>{item.sourceReference ?? 'Project readiness rules'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {actionsRequired.map((item) => (
+            <article className="ops-table__row" key={item.id}>
+              <strong>{item.actionRequired}</strong>
+              <span>{item.category}</span>
+              <span>{item.owner}</span>
+              <span>{formatDate(item.dueDate)}</span>
+              <StatusBadge status={getReadinessStatus(item)} />
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="project-metadata">
-        <span>{project.client}</span>
-        <span>{project.location}</span>
-        <span>{project.phase}</span>
-        <span>{project.contractValue}</span>
+      <section className="ops-panel">
+        <div className="ops-panel__heading">
+          <h2>Readiness Categories</h2>
+          <span>Compact category indicators</span>
+        </div>
+        <div className="ops-table ops-table--categories">
+          <div className="ops-table__header">
+            <span>Category</span>
+            <span>Red</span>
+            <span>Yellow</span>
+            <span>Green/OK</span>
+            <span>Current Concern</span>
+          </div>
+          {categorySummaries.map((summary) => (
+            <article className="ops-table__row" key={summary.category}>
+              <strong>{summary.category}</strong>
+              <span className="count-pill count-pill--red">{summary.red}</span>
+              <span className="count-pill count-pill--yellow">{summary.yellow}</span>
+              <span>{summary.green}</span>
+              <span>{summary.attention}</span>
+            </article>
+          ))}
+        </div>
       </section>
+
+      <div className="ops-grid">
+        <section className="ops-panel">
+          <div className="ops-panel__heading">
+            <h2>Risks</h2>
+            <span>Known project risks</span>
+          </div>
+          <div className="ops-list">
+            {project.risks.map((risk) => (
+              <article className="ops-list__item" key={risk.id}>
+                <div className="item-title-row">
+                  <strong>{risk.title}</strong>
+                  <StatusBadge status={risk.trend === 'Increasing' ? 'Red' : 'Yellow'} label={risk.trend} />
+                </div>
+                <span>{risk.category} - {risk.owner} - {risk.likelihood} likelihood / {risk.impact} impact</span>
+                <p>{risk.mitigation}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="ops-panel">
+          <div className="ops-panel__heading">
+            <h2>Recent Activity</h2>
+            <span>Latest updates and changes</span>
+          </div>
+          <div className="activity-list">
+            {project.recentActivity.map((activity) => (
+              <span key={activity}>{activity}</span>
+            ))}
+          </div>
+        </section>
+      </div>
     </section>
   );
 }
