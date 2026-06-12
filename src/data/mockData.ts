@@ -4,7 +4,9 @@ import { FileWarning, FileText, HardHat, PackageCheck, ShieldCheck, Users } from
 export type ReadinessCategory = 'Procurement' | 'Resources' | 'Startup' | 'Documentation' | 'Quality' | 'Issues';
 export type ReadinessStatus = 'Red' | 'Yellow' | 'Green' | 'Gray';
 export type ItemState = 'Not started' | 'In progress' | 'Waiting' | 'Complete';
-export type MilestoneState = 'Complete' | 'Upcoming' | 'At risk';
+export type MilestoneState = 'Complete' | 'Upcoming' | 'At risk' | 'Blocked' | 'Not Active';
+export type DeliverableState = 'Complete' | 'Upcoming' | 'At risk' | 'Missing';
+export type QualityGateStatus = 'Red' | 'Yellow' | 'Green' | 'Upcoming';
 
 export interface Milestone {
   id: string;
@@ -20,6 +22,8 @@ export interface ReadinessItem {
   projectName: string;
   projectNumber: string;
   category: ReadinessCategory;
+  milestoneId: string;
+  milestoneName: string;
   title: string;
   owner: string;
   dueDate: string;
@@ -46,6 +50,28 @@ export interface Project {
   readinessItems: ReadinessItem[];
   risks: ProjectRisk[];
   recentActivity: string[];
+  deliverables: Deliverable[];
+  qualityGates: QualityGate[];
+}
+
+export interface Deliverable {
+  id: string;
+  name: string;
+  milestoneId: string;
+  milestoneName: string;
+  owner: string;
+  dueDate?: string;
+  state: DeliverableState;
+}
+
+export interface QualityGate {
+  id: string;
+  name: string;
+  milestoneId: string;
+  milestoneName: string;
+  qaqcEligible: boolean;
+  status: QualityGateStatus;
+  vpEntryNeeded: 'Yes' | 'Future' | 'No';
 }
 
 export interface ProjectRisk {
@@ -60,6 +86,7 @@ export interface ProjectRisk {
   owner: string;
   mitigation: string;
   trend: 'Stable' | 'Increasing';
+  milestoneImpact: string[];
 }
 
 export interface ResourceConstraint {
@@ -140,17 +167,30 @@ export const projects: Project[] = [
       { id: 'm-107', name: 'Closeout', date: '2026-10-15', state: 'Upcoming', readinessGaps: [] },
     ],
     readinessItems: [
-      item(projectShells[0], { id: 'RI-101', category: 'Procurement', title: 'Purchase request submitted', owner: 'Avery Grant', dueDate: '2026-06-06', actionRequired: 'Approve switchgear PR and confirm accounting code.', latestUpdate: 'PR is drafted with vendor quote attached.', sourceReference: 'Procurement SOP 2.3', state: 'In progress', active: true, applicable: true }),
-      item(projectShells[0], { id: 'RI-102', category: 'Startup', title: 'FAT required determined', owner: 'Sam Rivera', dueDate: '2026-06-10', actionRequired: 'Confirm FAT requirement with controls lead and client.', latestUpdate: 'Controls package includes witness test language.', sourceReference: 'Startup Playbook FAT gate', state: 'Waiting', active: true, applicable: true }),
-      item(projectShells[0], { id: 'RI-103', category: 'Resources', title: 'Startup resource assigned', owner: 'Jordan Patel', dueDate: '2026-06-25', actionRequired: 'Reserve startup specialist for August window.', latestUpdate: 'Resource manager has two available names.', state: 'Not started', active: true, applicable: true }),
-      item(projectShells[0], { id: 'RI-104', category: 'Documentation', title: 'Design review complete', owner: 'Riley Chen', dueDate: '2026-06-04', actionRequired: 'Close final three design review comments.', latestUpdate: 'Two comments require engineer response.', sourceReference: 'Design Quality Checklist', state: 'In progress', active: true, applicable: true }),
-      item(projectShells[0], { id: 'RI-105', category: 'Quality', title: 'Site readiness reviewed', owner: 'Avery Grant', dueDate: '2026-07-09', actionRequired: 'Schedule site readiness walk with superintendent.', latestUpdate: 'Walk not needed until procurement release is locked.', state: 'Not started', active: false, applicable: true }),
+      item(projectShells[0], { id: 'RI-101', category: 'Procurement', milestoneId: 'm-104', milestoneName: 'Procurement', title: 'Purchase request submitted', owner: 'Avery Grant', dueDate: '2026-06-06', actionRequired: 'Approve switchgear PR and confirm accounting code.', latestUpdate: 'PR is drafted with vendor quote attached.', sourceReference: 'Procurement SOP 2.3', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[0], { id: 'RI-102', category: 'Startup', milestoneId: 'm-105', milestoneName: 'FAT', title: 'FAT required determined', owner: 'Sam Rivera', dueDate: '2026-06-10', actionRequired: 'Confirm FAT requirement with controls lead and client.', latestUpdate: 'Controls package includes witness test language.', sourceReference: 'Startup Playbook FAT gate', state: 'Waiting', active: true, applicable: true }),
+      item(projectShells[0], { id: 'RI-103', category: 'Resources', milestoneId: 'm-106', milestoneName: 'Startup', title: 'Startup resource assigned', owner: 'Jordan Patel', dueDate: '2026-06-25', actionRequired: 'Reserve startup specialist for August window.', latestUpdate: 'Resource manager has two available names.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[0], { id: 'RI-104', category: 'Documentation', milestoneId: 'm-103', milestoneName: 'Design', title: 'Design review complete', owner: 'Riley Chen', dueDate: '2026-06-04', actionRequired: 'Close final three design review comments.', latestUpdate: 'Two comments require engineer response.', sourceReference: 'Design Quality Checklist', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[0], { id: 'RI-105', category: 'Quality', milestoneId: 'm-106', milestoneName: 'Startup', title: 'Site readiness reviewed', owner: 'Avery Grant', dueDate: '2026-07-09', actionRequired: 'Schedule site readiness walk with superintendent.', latestUpdate: 'Walk not needed until procurement release is locked.', state: 'Not started', active: false, applicable: true }),
     ],
     risks: [
-      { id: 'R-101', projectId: projectShells[0].id, projectName: projectShells[0].name, projectNumber: projectShells[0].projectNumber, title: 'FAT incomplete before procurement release', category: 'Startup', likelihood: 'Medium', impact: 'High', owner: 'Sam Rivera', mitigation: 'Confirm witness testing requirement and lock FAT window.', trend: 'Increasing' },
-      { id: 'R-102', projectId: projectShells[0].id, projectName: projectShells[0].name, projectNumber: projectShells[0].projectNumber, title: 'Startup resource not assigned', category: 'Resources', likelihood: 'Medium', impact: 'High', owner: 'Jordan Patel', mitigation: 'Reserve August specialist from central pool.', trend: 'Stable' },
+      { id: 'R-101', projectId: projectShells[0].id, projectName: projectShells[0].name, projectNumber: projectShells[0].projectNumber, title: 'FAT incomplete before procurement release', category: 'Startup', likelihood: 'Medium', impact: 'High', owner: 'Sam Rivera', mitigation: 'Confirm witness testing requirement and lock FAT window.', trend: 'Increasing', milestoneImpact: ['FAT', 'Startup'] },
+      { id: 'R-102', projectId: projectShells[0].id, projectName: projectShells[0].name, projectNumber: projectShells[0].projectNumber, title: 'Startup resource not assigned', category: 'Resources', likelihood: 'Medium', impact: 'High', owner: 'Jordan Patel', mitigation: 'Reserve August specialist from central pool.', trend: 'Stable', milestoneImpact: ['Startup'] },
     ],
     recentActivity: ['Switchgear quote attached to procurement request.', 'Controls lead flagged FAT witness language.', 'Two design review comments were closed.'],
+    deliverables: [
+      { id: 'D-101', name: 'Control Description', milestoneId: 'm-103', milestoneName: 'Design', owner: 'Riley Chen', dueDate: '2026-06-04', state: 'At risk' },
+      { id: 'D-102', name: 'Network Diagram', milestoneId: 'm-103', milestoneName: 'Design', owner: 'Avery Grant', state: 'Complete' },
+      { id: 'D-103', name: 'Panel Drawings', milestoneId: 'm-104', milestoneName: 'Procurement', owner: 'Riley Chen', dueDate: '2026-06-10', state: 'Upcoming' },
+      { id: 'D-104', name: 'FAT Procedure', milestoneId: 'm-105', milestoneName: 'FAT', owner: 'Sam Rivera', dueDate: '2026-06-18', state: 'At risk' },
+      { id: 'D-105', name: 'Startup Plan', milestoneId: 'm-106', milestoneName: 'Startup', owner: 'Jordan Patel', dueDate: '2026-07-24', state: 'Upcoming' },
+      { id: 'D-106', name: 'O&M / Closeout Package', milestoneId: 'm-107', milestoneName: 'Closeout', owner: 'Riley Chen', dueDate: '2026-09-15', state: 'Upcoming' },
+    ],
+    qualityGates: [
+      { id: 'Q-101', name: 'Design Review Signoff', milestoneId: 'm-103', milestoneName: 'Design', qaqcEligible: true, status: 'Red', vpEntryNeeded: 'Yes' },
+      { id: 'Q-102', name: 'FAT Procedure Approval', milestoneId: 'm-105', milestoneName: 'FAT', qaqcEligible: true, status: 'Yellow', vpEntryNeeded: 'Future' },
+      { id: 'Q-103', name: 'Startup Readiness Review', milestoneId: 'm-106', milestoneName: 'Startup', qaqcEligible: true, status: 'Upcoming', vpEntryNeeded: 'Future' },
+    ],
   },
   {
     ...projectShells[1],
@@ -171,17 +211,30 @@ export const projects: Project[] = [
       { id: 'm-207', name: 'Closeout', date: '2026-11-01', state: 'Upcoming', readinessGaps: [] },
     ],
     readinessItems: [
-      item(projectShells[1], { id: 'RI-201', category: 'Procurement', title: 'Long lead items identified', owner: 'Nina Brooks', dueDate: '2026-06-07', actionRequired: 'Decide whether pump package is early release.', latestUpdate: 'Two quotes received; third vendor has not responded.', sourceReference: 'Long Lead Procurement Standard', state: 'Waiting', active: true, applicable: true }),
-      item(projectShells[1], { id: 'RI-202', category: 'Procurement', title: 'Purchase request submitted', owner: 'Nina Brooks', dueDate: '2026-06-12', actionRequired: 'Submit PR once vendor decision is made.', latestUpdate: 'PR shell exists but cannot route without award decision.', state: 'Not started', active: true, applicable: true }),
-      item(projectShells[1], { id: 'RI-203', category: 'Startup', title: 'Startup plan complete', owner: 'Sam Rivera', dueDate: '2026-06-27', actionRequired: 'Draft startup sequence around controls narrative.', latestUpdate: 'Controls narrative due from design on Jun 14.', sourceReference: 'Startup Planning Standard', state: 'Not started', active: true, applicable: true }),
-      item(projectShells[1], { id: 'RI-204', category: 'Documentation', title: 'Sales-to-PM transition meeting complete', owner: 'Nina Brooks', dueDate: '2026-06-04', actionRequired: 'Hold transition meeting and capture assumptions.', latestUpdate: 'Estimator is available Thursday afternoon.', state: 'In progress', active: true, applicable: true }),
-      item(projectShells[1], { id: 'RI-205', category: 'Quality', title: 'FAT procedure complete', owner: 'Sam Rivera', dueDate: '2026-08-01', actionRequired: 'No action until FAT requirement is confirmed.', latestUpdate: 'FAT may not apply to selected pump package.', state: 'Not started', active: false, applicable: false }),
+      item(projectShells[1], { id: 'RI-201', category: 'Procurement', milestoneId: 'm-204', milestoneName: 'Procurement', title: 'Long lead items identified', owner: 'Nina Brooks', dueDate: '2026-06-07', actionRequired: 'Decide whether pump package is early release.', latestUpdate: 'Two quotes received; third vendor has not responded.', sourceReference: 'Long Lead Procurement Standard', state: 'Waiting', active: true, applicable: true }),
+      item(projectShells[1], { id: 'RI-202', category: 'Procurement', milestoneId: 'm-204', milestoneName: 'Procurement', title: 'Purchase request submitted', owner: 'Nina Brooks', dueDate: '2026-06-12', actionRequired: 'Submit PR once vendor decision is made.', latestUpdate: 'PR shell exists but cannot route without award decision.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[1], { id: 'RI-203', category: 'Startup', milestoneId: 'm-206', milestoneName: 'Startup', title: 'Startup plan complete', owner: 'Sam Rivera', dueDate: '2026-06-27', actionRequired: 'Draft startup sequence around controls narrative.', latestUpdate: 'Controls narrative due from design on Jun 14.', sourceReference: 'Startup Planning Standard', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[1], { id: 'RI-204', category: 'Documentation', milestoneId: 'm-202', milestoneName: 'Kickoff', title: 'Sales-to-PM transition meeting complete', owner: 'Nina Brooks', dueDate: '2026-06-04', actionRequired: 'Hold transition meeting and capture assumptions.', latestUpdate: 'Estimator is available Thursday afternoon.', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[1], { id: 'RI-205', category: 'Quality', milestoneId: 'm-205', milestoneName: 'FAT', title: 'FAT procedure complete', owner: 'Sam Rivera', dueDate: '2026-08-01', actionRequired: 'No action until FAT requirement is confirmed.', latestUpdate: 'FAT may not apply to selected pump package.', state: 'Not started', active: false, applicable: false }),
     ],
     risks: [
-      { id: 'R-201', projectId: projectShells[1].id, projectName: projectShells[1].name, projectNumber: projectShells[1].projectNumber, title: 'Procurement delay from pump vendor decision', category: 'Procurement', likelihood: 'High', impact: 'High', owner: 'Nina Brooks', mitigation: 'Set decision date and prepare alternate quote path.', trend: 'Increasing' },
-      { id: 'R-202', projectId: projectShells[1].id, projectName: projectShells[1].name, projectNumber: projectShells[1].projectNumber, title: 'Startup planning without controls narrative', category: 'Startup', likelihood: 'Medium', impact: 'Medium', owner: 'Sam Rivera', mitigation: 'Use draft design sequence for first-pass startup plan.', trend: 'Stable' },
+      { id: 'R-201', projectId: projectShells[1].id, projectName: projectShells[1].name, projectNumber: projectShells[1].projectNumber, title: 'Procurement delay from pump vendor decision', category: 'Procurement', likelihood: 'High', impact: 'High', owner: 'Nina Brooks', mitigation: 'Set decision date and prepare alternate quote path.', trend: 'Increasing', milestoneImpact: ['Procurement', 'Startup'] },
+      { id: 'R-202', projectId: projectShells[1].id, projectName: projectShells[1].name, projectNumber: projectShells[1].projectNumber, title: 'Startup planning without controls narrative', category: 'Startup', likelihood: 'Medium', impact: 'Medium', owner: 'Sam Rivera', mitigation: 'Use draft design sequence for first-pass startup plan.', trend: 'Stable', milestoneImpact: ['Startup'] },
     ],
     recentActivity: ['Third pump vendor missed quote response.', 'PR shell created but held from routing.', 'Estimator confirmed long-lead concern.'],
+    deliverables: [
+      { id: 'D-201', name: 'Control Description', milestoneId: 'm-203', milestoneName: 'Design', owner: 'Riley Chen', dueDate: '2026-06-14', state: 'Upcoming' },
+      { id: 'D-202', name: 'Network Diagram', milestoneId: 'm-203', milestoneName: 'Design', owner: 'Nina Brooks', dueDate: '2026-06-18', state: 'Upcoming' },
+      { id: 'D-203', name: 'Panel Drawings', milestoneId: 'm-204', milestoneName: 'Procurement', owner: 'Riley Chen', dueDate: '2026-06-21', state: 'Upcoming' },
+      { id: 'D-204', name: 'FAT Procedure', milestoneId: 'm-205', milestoneName: 'FAT', owner: 'Sam Rivera', dueDate: '2026-08-01', state: 'Missing' },
+      { id: 'D-205', name: 'Startup Plan', milestoneId: 'm-206', milestoneName: 'Startup', owner: 'Sam Rivera', dueDate: '2026-06-27', state: 'At risk' },
+      { id: 'D-206', name: 'O&M / Closeout Package', milestoneId: 'm-207', milestoneName: 'Closeout', owner: 'Nina Brooks', dueDate: '2026-10-15', state: 'Upcoming' },
+    ],
+    qualityGates: [
+      { id: 'Q-201', name: 'Transition Acceptance', milestoneId: 'm-202', milestoneName: 'Kickoff', qaqcEligible: false, status: 'Red', vpEntryNeeded: 'No' },
+      { id: 'Q-202', name: 'FAT Applicability Review', milestoneId: 'm-205', milestoneName: 'FAT', qaqcEligible: true, status: 'Yellow', vpEntryNeeded: 'Future' },
+      { id: 'Q-203', name: 'Startup Readiness Review', milestoneId: 'm-206', milestoneName: 'Startup', qaqcEligible: true, status: 'Upcoming', vpEntryNeeded: 'Future' },
+    ],
   },
   {
     ...projectShells[2],
@@ -202,15 +255,28 @@ export const projects: Project[] = [
       { id: 'm-307', name: 'Closeout', date: '2026-08-18', state: 'Upcoming', readinessGaps: [] },
     ],
     readinessItems: [
-      item(projectShells[2], { id: 'RI-301', category: 'Resources', title: 'Startup resource assigned', owner: 'Elena Wright', dueDate: '2026-06-14', actionRequired: 'Confirm instrumentation technician availability for July.', latestUpdate: 'Shared technician is currently double-booked.', state: 'Waiting', active: true, applicable: true }),
-      item(projectShells[2], { id: 'RI-302', category: 'Procurement', title: 'Shipment tracking confirmed', owner: 'Elena Wright', dueDate: '2026-06-20', actionRequired: 'Get VFD ship date from supplier.', latestUpdate: 'Supplier promised tracking by Jun 12.', state: 'In progress', active: true, applicable: true }),
-      item(projectShells[2], { id: 'RI-303', category: 'Startup', title: 'FAT resources assigned', owner: 'Sam Rivera', dueDate: '2026-06-28', actionRequired: 'Assign controls witness for FAT date.', latestUpdate: 'FAT date is tentative pending VFD tracking.', state: 'Not started', active: true, applicable: true }),
-      item(projectShells[2], { id: 'RI-304', category: 'Documentation', title: 'Design review complete', owner: 'Riley Chen', dueDate: '2026-05-22', actionRequired: 'No action required.', latestUpdate: 'Review closed with comments archived.', state: 'Complete', active: true, applicable: true }),
+      item(projectShells[2], { id: 'RI-301', category: 'Resources', milestoneId: 'm-306', milestoneName: 'Startup', title: 'Startup resource assigned', owner: 'Elena Wright', dueDate: '2026-06-14', actionRequired: 'Confirm instrumentation technician availability for July.', latestUpdate: 'Shared technician is currently double-booked.', state: 'Waiting', active: true, applicable: true }),
+      item(projectShells[2], { id: 'RI-302', category: 'Procurement', milestoneId: 'm-304', milestoneName: 'Procurement', title: 'Shipment tracking confirmed', owner: 'Elena Wright', dueDate: '2026-06-20', actionRequired: 'Get VFD ship date from supplier.', latestUpdate: 'Supplier promised tracking by Jun 12.', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[2], { id: 'RI-303', category: 'Startup', milestoneId: 'm-305', milestoneName: 'FAT', title: 'FAT resources assigned', owner: 'Sam Rivera', dueDate: '2026-06-28', actionRequired: 'Assign controls witness for FAT date.', latestUpdate: 'FAT date is tentative pending VFD tracking.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[2], { id: 'RI-304', category: 'Documentation', milestoneId: 'm-303', milestoneName: 'Design', title: 'Design review complete', owner: 'Riley Chen', dueDate: '2026-05-22', actionRequired: 'No action required.', latestUpdate: 'Review closed with comments archived.', state: 'Complete', active: true, applicable: true }),
     ],
     risks: [
-      { id: 'R-301', projectId: projectShells[2].id, projectName: projectShells[2].name, projectNumber: projectShells[2].projectNumber, title: 'Resource conflict for instrumentation technician', category: 'Resources', likelihood: 'High', impact: 'Medium', owner: 'Elena Wright', mitigation: 'Resolve shared technician booking before FAT assignments.', trend: 'Increasing' },
+      { id: 'R-301', projectId: projectShells[2].id, projectName: projectShells[2].name, projectNumber: projectShells[2].projectNumber, title: 'Resource conflict for instrumentation technician', category: 'Resources', likelihood: 'High', impact: 'Medium', owner: 'Elena Wright', mitigation: 'Resolve shared technician booking before FAT assignments.', trend: 'Increasing', milestoneImpact: ['FAT', 'Startup'] },
     ],
     recentActivity: ['Supplier committed to VFD tracking by Jun 12.', 'Design review closed and comments archived.', 'FAT date remains tentative.'],
+    deliverables: [
+      { id: 'D-301', name: 'Control Description', milestoneId: 'm-303', milestoneName: 'Design', owner: 'Riley Chen', state: 'Complete' },
+      { id: 'D-302', name: 'Network Diagram', milestoneId: 'm-303', milestoneName: 'Design', owner: 'Riley Chen', state: 'Complete' },
+      { id: 'D-303', name: 'Panel Drawings', milestoneId: 'm-304', milestoneName: 'Procurement', owner: 'Elena Wright', dueDate: '2026-06-21', state: 'Upcoming' },
+      { id: 'D-304', name: 'FAT Procedure', milestoneId: 'm-305', milestoneName: 'FAT', owner: 'Sam Rivera', dueDate: '2026-07-08', state: 'Upcoming' },
+      { id: 'D-305', name: 'Startup Plan', milestoneId: 'm-306', milestoneName: 'Startup', owner: 'Elena Wright', dueDate: '2026-07-24', state: 'Upcoming' },
+      { id: 'D-306', name: 'O&M / Closeout Package', milestoneId: 'm-307', milestoneName: 'Closeout', owner: 'Riley Chen', dueDate: '2026-08-10', state: 'Upcoming' },
+    ],
+    qualityGates: [
+      { id: 'Q-301', name: 'Procurement Release Check', milestoneId: 'm-304', milestoneName: 'Procurement', qaqcEligible: false, status: 'Yellow', vpEntryNeeded: 'No' },
+      { id: 'Q-302', name: 'FAT Witness Assignment', milestoneId: 'm-305', milestoneName: 'FAT', qaqcEligible: true, status: 'Yellow', vpEntryNeeded: 'Future' },
+      { id: 'Q-303', name: 'Startup Readiness Review', milestoneId: 'm-306', milestoneName: 'Startup', qaqcEligible: true, status: 'Red', vpEntryNeeded: 'Future' },
+    ],
   },
   {
     ...projectShells[3],
@@ -231,15 +297,28 @@ export const projects: Project[] = [
       { id: 'm-407', name: 'Closeout', date: '2026-10-20', state: 'Upcoming', readinessGaps: [] },
     ],
     readinessItems: [
-      item(projectShells[3], { id: 'RI-401', category: 'Documentation', title: 'Design review complete', owner: 'Marcus Stone', dueDate: '2026-06-06', actionRequired: 'Consolidate county permit response matrix.', latestUpdate: 'Responses live in three separate review logs.', sourceReference: 'Design Quality Checklist', state: 'In progress', active: true, applicable: true }),
-      item(projectShells[3], { id: 'RI-402', category: 'Procurement', title: 'Long lead items identified', owner: 'Marcus Stone', dueDate: '2026-06-16', actionRequired: 'Decide early-release valve package boundaries.', latestUpdate: 'Estimator flagged potential valve lead time issue.', state: 'Not started', active: true, applicable: true }),
-      item(projectShells[3], { id: 'RI-403', category: 'Issues', title: 'Client kickoff scheduled', owner: 'Marcus Stone', dueDate: '2026-06-03', actionRequired: 'Confirm recurring decision meeting with client.', latestUpdate: 'Client requested a new recurring time.', state: 'Waiting', active: true, applicable: true }),
-      item(projectShells[3], { id: 'RI-404', category: 'Quality', title: 'Punchlist complete', owner: 'Riley Chen', dueDate: '2026-09-15', actionRequired: 'No action until construction work starts.', latestUpdate: 'Punchlist phase is not active.', state: 'Not started', active: false, applicable: true }),
+      item(projectShells[3], { id: 'RI-401', category: 'Documentation', milestoneId: 'm-403', milestoneName: 'Design', title: 'Design review complete', owner: 'Marcus Stone', dueDate: '2026-06-06', actionRequired: 'Consolidate county permit response matrix.', latestUpdate: 'Responses live in three separate review logs.', sourceReference: 'Design Quality Checklist', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[3], { id: 'RI-402', category: 'Procurement', milestoneId: 'm-404', milestoneName: 'Procurement', title: 'Long lead items identified', owner: 'Marcus Stone', dueDate: '2026-06-16', actionRequired: 'Decide early-release valve package boundaries.', latestUpdate: 'Estimator flagged potential valve lead time issue.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[3], { id: 'RI-403', category: 'Issues', milestoneId: 'm-403', milestoneName: 'Design', title: 'Client kickoff scheduled', owner: 'Marcus Stone', dueDate: '2026-06-03', actionRequired: 'Confirm recurring decision meeting with client.', latestUpdate: 'Client requested a new recurring time.', state: 'Waiting', active: true, applicable: true }),
+      item(projectShells[3], { id: 'RI-404', category: 'Quality', milestoneId: 'm-406', milestoneName: 'Startup', title: 'Punchlist complete', owner: 'Riley Chen', dueDate: '2026-09-15', actionRequired: 'No action until construction work starts.', latestUpdate: 'Punchlist phase is not active.', state: 'Not started', active: false, applicable: true }),
     ],
     risks: [
-      { id: 'R-401', projectId: projectShells[3].id, projectName: projectShells[3].name, projectNumber: projectShells[3].projectNumber, title: 'Design closeout slips from permit response churn', category: 'Documentation', likelihood: 'Medium', impact: 'High', owner: 'Marcus Stone', mitigation: 'Consolidate response matrix and assign single client approver.', trend: 'Increasing' },
+      { id: 'R-401', projectId: projectShells[3].id, projectName: projectShells[3].name, projectNumber: projectShells[3].projectNumber, title: 'Design closeout slips from permit response churn', category: 'Documentation', likelihood: 'Medium', impact: 'High', owner: 'Marcus Stone', mitigation: 'Consolidate response matrix and assign single client approver.', trend: 'Increasing', milestoneImpact: ['Design', 'Procurement'] },
     ],
     recentActivity: ['County permit comments consolidated from three logs.', 'Estimator flagged valve lead time exposure.', 'Client requested new recurring decision slot.'],
+    deliverables: [
+      { id: 'D-401', name: 'Control Description', milestoneId: 'm-403', milestoneName: 'Design', owner: 'Marcus Stone', dueDate: '2026-06-06', state: 'At risk' },
+      { id: 'D-402', name: 'Network Diagram', milestoneId: 'm-403', milestoneName: 'Design', owner: 'Riley Chen', dueDate: '2026-06-09', state: 'Upcoming' },
+      { id: 'D-403', name: 'Panel Drawings', milestoneId: 'm-404', milestoneName: 'Procurement', owner: 'Marcus Stone', dueDate: '2026-06-20', state: 'Upcoming' },
+      { id: 'D-404', name: 'FAT Procedure', milestoneId: 'm-405', milestoneName: 'FAT', owner: 'Sam Rivera', dueDate: '2026-07-28', state: 'Upcoming' },
+      { id: 'D-405', name: 'Startup Plan', milestoneId: 'm-406', milestoneName: 'Startup', owner: 'Marcus Stone', dueDate: '2026-08-12', state: 'Upcoming' },
+      { id: 'D-406', name: 'O&M / Closeout Package', milestoneId: 'm-407', milestoneName: 'Closeout', owner: 'Riley Chen', dueDate: '2026-10-02', state: 'Upcoming' },
+    ],
+    qualityGates: [
+      { id: 'Q-401', name: 'Design Review Signoff', milestoneId: 'm-403', milestoneName: 'Design', qaqcEligible: true, status: 'Red', vpEntryNeeded: 'Yes' },
+      { id: 'Q-402', name: 'Procurement Release Check', milestoneId: 'm-404', milestoneName: 'Procurement', qaqcEligible: false, status: 'Yellow', vpEntryNeeded: 'No' },
+      { id: 'Q-403', name: 'Startup Readiness Review', milestoneId: 'm-406', milestoneName: 'Startup', qaqcEligible: true, status: 'Upcoming', vpEntryNeeded: 'Future' },
+    ],
   },
   {
     ...projectShells[4],
@@ -260,15 +339,28 @@ export const projects: Project[] = [
       { id: 'm-507', name: 'Closeout', date: '2026-09-05', state: 'Upcoming', readinessGaps: ['Warranty letter draft'] },
     ],
     readinessItems: [
-      item(projectShells[4], { id: 'RI-501', category: 'Documentation', title: 'Warranty letter sent', owner: 'Priya Shah', dueDate: '2026-06-17', actionRequired: 'Draft warranty letter for client review.', latestUpdate: 'Contract terms confirmed with legal.', state: 'Not started', active: true, applicable: true }),
-      item(projectShells[4], { id: 'RI-502', category: 'Startup', title: 'Startup plan complete', owner: 'Priya Shah', dueDate: '2026-06-21', actionRequired: 'Add sampling roles to startup plan.', latestUpdate: 'Vendor rep and lab courier confirmed.', sourceReference: 'Startup Planning Standard', state: 'In progress', active: true, applicable: true }),
-      item(projectShells[4], { id: 'RI-503', category: 'Quality', title: 'FAT procedure complete', owner: 'Sam Rivera', dueDate: '2026-06-08', actionRequired: 'Approve PFAS media skid FAT procedure.', latestUpdate: 'Procedure is in final technical review.', state: 'In progress', active: true, applicable: true }),
-      item(projectShells[4], { id: 'RI-504', category: 'Documentation', title: 'Project closeout complete', owner: 'Riley Chen', dueDate: '2026-09-05', actionRequired: 'No current action required.', latestUpdate: 'Closeout phase opens after SAT.', state: 'Not started', active: false, applicable: true }),
+      item(projectShells[4], { id: 'RI-501', category: 'Documentation', milestoneId: 'm-507', milestoneName: 'Closeout', title: 'Warranty letter sent', owner: 'Priya Shah', dueDate: '2026-06-17', actionRequired: 'Draft warranty letter for client review.', latestUpdate: 'Contract terms confirmed with legal.', state: 'Not started', active: true, applicable: true }),
+      item(projectShells[4], { id: 'RI-502', category: 'Startup', milestoneId: 'm-506', milestoneName: 'Startup', title: 'Startup plan complete', owner: 'Priya Shah', dueDate: '2026-06-21', actionRequired: 'Add sampling roles to startup plan.', latestUpdate: 'Vendor rep and lab courier confirmed.', sourceReference: 'Startup Planning Standard', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[4], { id: 'RI-503', category: 'Quality', milestoneId: 'm-505', milestoneName: 'FAT', title: 'FAT procedure complete', owner: 'Sam Rivera', dueDate: '2026-06-08', actionRequired: 'Approve PFAS media skid FAT procedure.', latestUpdate: 'Procedure is in final technical review.', state: 'In progress', active: true, applicable: true }),
+      item(projectShells[4], { id: 'RI-504', category: 'Documentation', milestoneId: 'm-507', milestoneName: 'Closeout', title: 'Project closeout complete', owner: 'Riley Chen', dueDate: '2026-09-05', actionRequired: 'No current action required.', latestUpdate: 'Closeout phase opens after SAT.', state: 'Not started', active: false, applicable: true }),
     ],
     risks: [
-      { id: 'R-501', projectId: projectShells[4].id, projectName: projectShells[4].name, projectNumber: projectShells[4].projectNumber, title: 'Warranty letter timing compresses SAT closeout', category: 'Documentation', likelihood: 'Medium', impact: 'Medium', owner: 'Priya Shah', mitigation: 'Draft warranty letter before FAT completion.', trend: 'Stable' },
+      { id: 'R-501', projectId: projectShells[4].id, projectName: projectShells[4].name, projectNumber: projectShells[4].projectNumber, title: 'Warranty letter timing compresses SAT closeout', category: 'Documentation', likelihood: 'Medium', impact: 'Medium', owner: 'Priya Shah', mitigation: 'Draft warranty letter before FAT completion.', trend: 'Stable', milestoneImpact: ['Startup', 'Closeout'] },
     ],
     recentActivity: ['Legal confirmed warranty terms.', 'Vendor rep and lab courier confirmed.', 'FAT procedure moved to final technical review.'],
+    deliverables: [
+      { id: 'D-501', name: 'Control Description', milestoneId: 'm-503', milestoneName: 'Design', owner: 'Riley Chen', state: 'Complete' },
+      { id: 'D-502', name: 'Network Diagram', milestoneId: 'm-503', milestoneName: 'Design', owner: 'Riley Chen', state: 'Complete' },
+      { id: 'D-503', name: 'Panel Drawings', milestoneId: 'm-504', milestoneName: 'Procurement', owner: 'Priya Shah', state: 'Complete' },
+      { id: 'D-504', name: 'FAT Procedure', milestoneId: 'm-505', milestoneName: 'FAT', owner: 'Sam Rivera', dueDate: '2026-06-08', state: 'At risk' },
+      { id: 'D-505', name: 'Startup Plan', milestoneId: 'm-506', milestoneName: 'Startup', owner: 'Priya Shah', dueDate: '2026-06-21', state: 'Upcoming' },
+      { id: 'D-506', name: 'O&M / Closeout Package', milestoneId: 'm-507', milestoneName: 'Closeout', owner: 'Riley Chen', dueDate: '2026-09-05', state: 'Upcoming' },
+    ],
+    qualityGates: [
+      { id: 'Q-501', name: 'FAT Procedure Approval', milestoneId: 'm-505', milestoneName: 'FAT', qaqcEligible: true, status: 'Red', vpEntryNeeded: 'Yes' },
+      { id: 'Q-502', name: 'Startup Readiness Review', milestoneId: 'm-506', milestoneName: 'Startup', qaqcEligible: true, status: 'Yellow', vpEntryNeeded: 'Future' },
+      { id: 'Q-503', name: 'Closeout Compliance Package', milestoneId: 'm-507', milestoneName: 'Closeout', qaqcEligible: true, status: 'Upcoming', vpEntryNeeded: 'Future' },
+    ],
   },
 ];
 
