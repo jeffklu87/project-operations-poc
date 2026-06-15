@@ -829,6 +829,205 @@ svg {
   color: var(--text);
 }
 
+.detail-tabs {
+  display: inline-flex;
+  width: fit-content;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.detail-tabs button {
+  min-height: 30px;
+  padding: 6px 12px;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.detail-tabs button:last-child {
+  border-right: 0;
+}
+
+.detail-tabs button.active {
+  color: var(--text-inverse);
+  background: var(--blue);
+}
+
+.workarea-focus {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(320px, 1fr) minmax(220px, 0.7fr);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--red);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.workarea-focus > div {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-right: 1px solid var(--border);
+}
+
+.workarea-focus > div:last-child {
+  border-right: 0;
+}
+
+.workarea-focus h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 1.05rem;
+}
+
+.workarea-focus strong,
+.workarea-focus > div > span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.workarea-focus p {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.workarea-attention-list,
+.workarea-stack,
+.workarea-healthy-list {
+  display: grid;
+}
+
+.workarea-summary {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.4fr) minmax(160px, 0.6fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.workarea-summary:last-child {
+  border-bottom: 0;
+}
+
+.workarea-summary div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.workarea-summary strong,
+.signal-row strong {
+  color: var(--text-strong);
+}
+
+.workarea-summary span,
+.workarea-summary small,
+.signal-row span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workarea-detail {
+  border-top: 3px solid var(--border-strong);
+}
+
+.workarea-detail--attention {
+  border-top-color: var(--red);
+}
+
+.workarea-detail--planning {
+  border-top-color: #bf8700;
+}
+
+.workarea-detail > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 10px;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  list-style: none;
+}
+
+.workarea-detail > summary::-webkit-details-marker {
+  display: none;
+}
+
+.workarea-detail summary > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.workarea-detail summary strong {
+  color: var(--text-strong);
+  font-size: 0.9rem;
+}
+
+.workarea-detail summary small {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.workarea-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+
+.workarea-detail-grid .signal-list {
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.workarea-detail-grid .signal-list:nth-child(3n) {
+  border-right: 0;
+}
+
+.signal-list > div:last-child {
+  display: grid;
+}
+
+.signal-row {
+  display: grid;
+  gap: 2px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+.signal-row:last-child {
+  border-bottom: 0;
+}
+
+.signal-row--empty strong {
+  color: var(--text-muted);
+}
+
 .perspective-switcher {
   display: grid;
   grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.4fr);
@@ -997,6 +1196,8 @@ svg {
   .ops-grid--thirds,
   .module-decision-grid,
   .perspective-switcher,
+  .workarea-focus,
+  .workarea-detail-grid,
   .milestone-focus,
   .project-header,
   .project-header dl {
@@ -1077,6 +1278,8 @@ svg {
   .ops-grid--thirds,
   .module-decision-grid,
   .perspective-switcher,
+  .workarea-focus,
+  .workarea-detail-grid,
   .milestone-focus,
   .project-header,
   .project-header dl {

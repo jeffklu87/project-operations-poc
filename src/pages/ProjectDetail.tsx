@@ -1,19 +1,22 @@
 import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
 import {
   formatDate,
-  getCategorySummaries,
   getProjectById,
   getReadinessStatus,
-  type Milestone,
-  type ReadinessItem,
+  projectWorkAreas,
+  type WorkArea,
 } from '../data/mockData';
 
-const sortByDueDate = (items: ReadinessItem[]) => [...items].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+type DetailTab = 'Overview' | 'Work Areas';
+
+const tabs: DetailTab[] = ['Overview', 'Work Areas'];
 
 export function ProjectDetail() {
   const { projectId } = useParams();
+  const [activeTab, setActiveTab] = useState<DetailTab>('Overview');
   const project = getProjectById(projectId);
 
   if (!project) {
@@ -26,33 +29,21 @@ export function ProjectDetail() {
     );
   }
 
-  const redItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Red');
-  const yellowItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Yellow');
-  const actionsRequired = sortByDueDate(project.readinessItems.filter((item) => item.active && item.applicable && item.state !== 'Complete'));
-  const categorySummaries = getCategorySummaries(project.readinessItems);
+  const workAreas = projectWorkAreas[project.id] ?? [];
+  const attentionWorkAreas = workAreas.filter((workArea) => workArea.state === 'Attention');
+  const planningWorkAreas = workAreas.filter((workArea) => workArea.state === 'Planning');
+  const healthyWorkAreas = workAreas.filter((workArea) => workArea.state === 'Healthy');
   const nextMilestone = project.milestones.find((milestone) => milestone.state === 'At risk' || milestone.state === 'Blocked')
     ?? project.milestones.find((milestone) => milestone.state === 'Upcoming')
     ?? project.milestones.find((milestone) => milestone.state !== 'Complete');
-
-  const getMilestoneGaps = (milestone: Milestone) => actionsRequired.filter((item) => item.milestoneId === milestone.id);
-  const currentGaps = nextMilestone ? getMilestoneGaps(nextMilestone) : [];
-  const currentQualityGates = nextMilestone ? project.qualityGates.filter((gate) => gate.milestoneId === nextMilestone.id && gate.status !== 'Green') : [];
-  const currentDeliverables = nextMilestone ? project.deliverables.filter((deliverable) => deliverable.milestoneId === nextMilestone.id && deliverable.state !== 'Complete') : [];
-  const focusBlockers = [
-    ...currentGaps.map((item) => item.actionRequired),
-    ...currentDeliverables.map((deliverable) => `${deliverable.name} ${deliverable.state.toLowerCase()}`),
-    ...currentQualityGates.map((gate) => gate.name),
-  ].slice(0, 5);
-  const deliverableSummary = {
-    total: project.deliverables.length,
-    complete: project.deliverables.filter((deliverable) => deliverable.state === 'Complete').length,
-    atRisk: project.deliverables.filter((deliverable) => deliverable.state === 'At risk' || deliverable.state === 'Missing').length,
-    upcoming: project.deliverables.filter((deliverable) => deliverable.state === 'Upcoming').length,
-  };
-  const qualityGateSummary = {
-    pending: project.qualityGates.filter((gate) => gate.status === 'Red' || gate.status === 'Yellow' || gate.status === 'Upcoming').length,
-    complete: project.qualityGates.filter((gate) => gate.status === 'Green').length,
-  };
+  const currentFocus = attentionWorkAreas[0] ?? planningWorkAreas[0] ?? workAreas[0];
+  const redItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Red');
+  const yellowItems = project.readinessItems.filter((item) => getReadinessStatus(item) === 'Yellow');
+  const topBlockers = workAreas.flatMap((workArea) => workArea.blockers.map((blocker) => ({ blocker, workArea }))).slice(0, 5);
+  const topActions = workAreas.flatMap((workArea) => workArea.actions.map((action) => ({ action, workArea }))).slice(0, 5);
+  const topRisks = workAreas.flatMap((workArea) => workArea.risks.map((risk) => ({ risk, workArea }))).slice(0, 4);
+  const topDecisions = workAreas.flatMap((workArea) => workArea.decisions.map((decision) => ({ decision, workArea }))).slice(0, 4);
+  const topUnknowns = workAreas.flatMap((workArea) => workArea.unknowns.map((unknown) => ({ unknown, workArea }))).slice(0, 4);
 
   return (
     <section className="ops-page project-detail-page">
@@ -69,236 +60,152 @@ export function ProjectDetail() {
           <div><dt>PM</dt><dd>{project.manager}</dd></div>
           <div><dt>Client</dt><dd>{project.client}</dd></div>
           <div><dt>Next Milestone</dt><dd>{nextMilestone ? `${nextMilestone.name} ${formatDate(nextMilestone.date)}` : 'None'}</dd></div>
-          <div><dt>Red Count</dt><dd>{redItems.length}</dd></div>
-          <div><dt>Yellow Count</dt><dd>{yellowItems.length}</dd></div>
+          <div><dt>Attention Areas</dt><dd>{attentionWorkAreas.length}</dd></div>
+          <div><dt>Red / Yellow</dt><dd>{redItems.length} / {yellowItems.length}</dd></div>
         </dl>
       </header>
 
-      {nextMilestone && (
-        <section className="milestone-focus">
-          <div className="milestone-focus__title">
-            <p className="eyebrow">Current Milestone Focus</p>
-            <h2>{nextMilestone.name}</h2>
-            <span>Due {formatDate(nextMilestone.date)}</span>
-            <StatusBadge status={nextMilestone.state} />
+      <nav className="detail-tabs" aria-label="Project detail sections">
+        {tabs.map((tab) => (
+          <button className={activeTab === tab ? 'active' : ''} key={tab} onClick={() => setActiveTab(tab)} type="button">
+            {tab}
+          </button>
+        ))}
+      </nav>
+
+      {activeTab === 'Overview' && currentFocus && (
+        <>
+          <section className="workarea-focus">
+            <div>
+              <p className="eyebrow">Current Focus</p>
+              <h2>{currentFocus.name}</h2>
+              <span>{currentFocus.currentFocus}</span>
+              <StatusBadge status={currentFocus.state === 'Attention' ? 'Red' : currentFocus.state === 'Planning' ? 'Yellow' : 'Green'} label={currentFocus.state} />
+            </div>
+            <div>
+              <strong>Attention</strong>
+              <p>{currentFocus.attentionReason}</p>
+            </div>
+            <div>
+              <strong>Next Milestone</strong>
+              <p>{currentFocus.nextMilestone}{nextMilestone ? ` - ${formatDate(nextMilestone.date)}` : ''}</p>
+            </div>
+          </section>
+
+          <section className="ops-panel ops-panel--primary">
+            <div className="ops-panel__heading">
+              <h2>Work Areas Requiring Attention</h2>
+              <span>{attentionWorkAreas.length} expanded operational areas</span>
+            </div>
+            <div className="workarea-attention-list">
+              {attentionWorkAreas.map((workArea) => (
+                <WorkAreaSummary workArea={workArea} key={workArea.id} />
+              ))}
+            </div>
+          </section>
+
+          <div className="ops-grid">
+            <SignalList title="Top Blockers" items={topBlockers.map((item) => ({ text: item.blocker, meta: item.workArea.name }))} />
+            <SignalList title="Top Actions" items={topActions.map((item) => ({ text: item.action, meta: item.workArea.owner }))} />
           </div>
-          <div className="milestone-focus__blockers">
-            <strong>Blocked By</strong>
-            <ul>
-              {focusBlockers.length > 0
-                ? focusBlockers.map((blocker) => <li key={blocker}>{blocker}</li>)
-                : <li>No known readiness blockers.</li>}
-            </ul>
+
+          <div className="ops-grid ops-grid--thirds">
+            <SignalList title="Risks" items={topRisks.map((item) => ({ text: item.risk, meta: item.workArea.name }))} />
+            <SignalList title="Decisions" items={topDecisions.map((item) => ({ text: item.decision, meta: item.workArea.owner }))} />
+            <SignalList title="Unknowns" items={topUnknowns.map((item) => ({ text: item.unknown, meta: item.workArea.name }))} />
           </div>
-          <div className="milestone-focus__impact">
-            <strong>Impact</strong>
-            <p>{project.riskSummary}</p>
-          </div>
-        </section>
+        </>
       )}
 
-      <section className="ops-panel">
-        <div className="ops-panel__heading">
-          <h2>Milestone Readiness Gates</h2>
-          <span>Achievability by milestone</span>
-        </div>
-        <div className="timeline-row timeline-row--gates">
-          {project.milestones.map((milestone) => {
-            const gaps = getMilestoneGaps(milestone);
-            const deliverableGaps = project.deliverables.filter((deliverable) => deliverable.milestoneId === milestone.id && deliverable.state !== 'Complete');
-            const qualityGaps = project.qualityGates.filter((gate) => gate.milestoneId === milestone.id && gate.status !== 'Green');
-            const gapCount = gaps.length + deliverableGaps.length + qualityGaps.length;
-            const summary = gaps[0]?.title ?? deliverableGaps[0]?.name ?? qualityGaps[0]?.name ?? milestone.readinessGaps[0] ?? 'No open gaps';
-
-            return (
-              <article className="timeline-step timeline-step--gate" key={milestone.id}>
-                <StatusBadge status={milestone.state} />
-                <strong>{milestone.name}</strong>
-                <span>{formatDate(milestone.date)}</span>
-                <b>{gapCount} gaps</b>
-                <p>{summary}</p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="ops-panel ops-panel--primary">
-        <div className="ops-panel__heading">
-          <h2>Readiness Gaps</h2>
-          <span>Grouped by milestone</span>
-        </div>
-        <div className="milestone-gap-stack">
-          {project.milestones.map((milestone) => {
-            const gaps = getMilestoneGaps(milestone);
-
-            if (gaps.length === 0) return null;
-
-            return (
-              <section className="milestone-gap-group" key={milestone.id}>
-                <div className="milestone-gap-group__header">
-                  <strong>{milestone.name}</strong>
-                  <span>{formatDate(milestone.date)} - {gaps.length} gaps</span>
-                </div>
-                <div className="ops-table ops-table--gaps">
-                  {gaps.map((item) => (
-                    <article className="ops-table__row" key={item.id}>
-                      <strong>{item.actionRequired}</strong>
-                      <span>{item.category}</span>
-                      <span>{item.owner}</span>
-                      <span>{formatDate(item.dueDate)}</span>
-                      <StatusBadge status={getReadinessStatus(item)} />
-                    </article>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="ops-panel">
-        <div className="ops-panel__heading">
-          <h2>Actions Required</h2>
-          <span>{actionsRequired.length} milestone-linked actions</span>
-        </div>
-        <div className="ops-table ops-table--project-actions">
-          <div className="ops-table__header">
-            <span>Action</span>
-            <span>Supports Milestone</span>
-            <span>Category</span>
-            <span>Owner</span>
-            <span>Due</span>
-            <span>Status</span>
-          </div>
-          {actionsRequired.map((item) => (
-            <article className="ops-table__row" key={item.id}>
-              <strong>{item.actionRequired}</strong>
-              <span>{item.milestoneName}</span>
-              <span>{item.category}</span>
-              <span>{item.owner}</span>
-              <span>{formatDate(item.dueDate)}</span>
-              <StatusBadge status={getReadinessStatus(item)} />
-            </article>
+      {activeTab === 'Work Areas' && (
+        <section className="workarea-stack">
+          {attentionWorkAreas.map((workArea) => (
+            <WorkAreaDetail workArea={workArea} expanded key={workArea.id} />
           ))}
-        </div>
-      </section>
-
-      <section className="ops-grid supporting-detail-grid" aria-label="Supporting details">
-        <details className="ops-panel attention-disclosure">
-          <summary>
-            <span>
-              <strong>Deliverables</strong>
-              <small>{deliverableSummary.total} total</small>
-            </span>
-            <span className="summary-metrics">
-              <b>{deliverableSummary.complete} Complete</b>
-              <b>{deliverableSummary.atRisk} At Risk</b>
-              <b>{deliverableSummary.upcoming} Upcoming</b>
-            </span>
-          </summary>
-          <div className="ops-table ops-table--deliverables">
-            <div className="ops-table__header">
-              <span>Deliverable</span>
-              <span>Supports Milestone</span>
-              <span>Owner</span>
-              <span>Due Date</span>
-              <span>State</span>
-            </div>
-            {project.deliverables.map((deliverable) => (
-              <article className="ops-table__row" key={deliverable.id}>
-                <strong>{deliverable.name}</strong>
-                <span>{deliverable.milestoneName}</span>
-                <span>{deliverable.owner}</span>
-                <span>{deliverable.dueDate ? formatDate(deliverable.dueDate) : 'Complete'}</span>
-                <StatusBadge status={deliverable.state} />
-              </article>
-            ))}
-          </div>
-        </details>
-
-        <details className="ops-panel attention-disclosure">
-          <summary>
-            <span>
-              <strong>Quality Gates</strong>
-              <small>Prepared for VantagePoint compliance</small>
-            </span>
-            <span className="summary-metrics">
-              <b>{qualityGateSummary.pending} Pending</b>
-              <b>{qualityGateSummary.complete} Complete</b>
-            </span>
-          </summary>
-          <div className="ops-table ops-table--quality">
-            <div className="ops-table__header">
-              <span>Gate</span>
-              <span>Supports</span>
-              <span>QAQC Eligible</span>
-              <span>Status</span>
-              <span>VP Entry Needed</span>
-            </div>
-            {project.qualityGates.map((gate) => (
-              <article className="ops-table__row" key={gate.id}>
-                <strong>{gate.name}</strong>
-                <span>{gate.milestoneName}</span>
-                <span>{gate.qaqcEligible ? 'Yes' : 'No'}</span>
-                <StatusBadge status={gate.status} />
-                <span>{gate.vpEntryNeeded}</span>
-              </article>
-            ))}
-          </div>
-        </details>
-      </section>
-
-      <section className="category-indicator-row" aria-label="Readiness category indicators">
-        {categorySummaries.map((summary) => (
-          <span key={summary.category}>
-            <strong>{summary.category}</strong>
-            {summary.red > 0 ? `${summary.red} Red` : summary.yellow > 0 ? `${summary.yellow} Yellow` : `${summary.green} OK`}
-          </span>
-        ))}
-      </section>
-
-      <div className="ops-grid">
-        <section className="ops-panel">
-          <div className="ops-panel__heading">
-            <h2>Risks</h2>
-            <span>Future uncertainty by milestone impact</span>
-          </div>
-          <div className="ops-table ops-table--risks">
-            <div className="ops-table__header">
-              <span>Risk</span>
-              <span>Impact</span>
-              <span>Owner</span>
-              <span>Trend</span>
-            </div>
-            {project.risks.map((risk) => (
-              <article className="ops-table__row" key={risk.id}>
-                <strong>{risk.title}</strong>
-                <span>{risk.milestoneImpact.join(' / ')}</span>
-                <span>{risk.owner}</span>
-                <StatusBadge status={risk.trend === 'Increasing' ? 'Red' : 'Yellow'} label={risk.trend} />
-              </article>
-            ))}
-          </div>
+          {planningWorkAreas.map((workArea) => (
+            <WorkAreaDetail workArea={workArea} expanded key={workArea.id} />
+          ))}
+          {healthyWorkAreas.length > 0 && (
+            <details className="ops-panel attention-disclosure">
+              <summary>
+                <span>
+                  <strong>Healthy Work Areas</strong>
+                  <small>{healthyWorkAreas.length} summarized areas</small>
+                </span>
+                <span className="summary-metrics"><b>Expand for reference</b></span>
+              </summary>
+              <div className="workarea-healthy-list">
+                {healthyWorkAreas.map((workArea) => (
+                  <WorkAreaSummary workArea={workArea} key={workArea.id} />
+                ))}
+              </div>
+            </details>
+          )}
         </section>
+      )}
+    </section>
+  );
+}
 
-        <details className="ops-panel attention-disclosure">
-          <summary>
-            <span>
-              <strong>Recent Activity</strong>
-              <small>{project.recentActivity.length + 1} updates</small>
-            </span>
-            <span className="summary-metrics">
-              <b>Investigation</b>
-            </span>
-          </summary>
-          <div className="activity-list">
-            <span>{project.latestUpdate}</span>
-            {project.recentActivity.map((activity) => (
-              <span key={activity}>{activity}</span>
-            ))}
-          </div>
-        </details>
+function WorkAreaSummary({ workArea }: { workArea: WorkArea }) {
+  return (
+    <article className="workarea-summary">
+      <div>
+        <strong>{workArea.name}</strong>
+        <span>{workArea.currentFocus}</span>
+      </div>
+      <div>
+        <small>Next</small>
+        <span>{workArea.nextMilestone}</span>
+      </div>
+      <StatusBadge status={workArea.state === 'Attention' ? 'Red' : workArea.state === 'Planning' ? 'Yellow' : 'Green'} label={workArea.state} />
+    </article>
+  );
+}
+
+function WorkAreaDetail({ workArea, expanded }: { workArea: WorkArea; expanded?: boolean }) {
+  return (
+    <details className={`ops-panel workarea-detail workarea-detail--${workArea.state.toLowerCase()}`} open={expanded}>
+      <summary>
+        <span>
+          <strong>{workArea.name}</strong>
+          <small>{workArea.currentFocus}</small>
+        </span>
+        <span className="summary-metrics">
+          <b>{workArea.nextMilestone}</b>
+          <StatusBadge status={workArea.state === 'Attention' ? 'Red' : workArea.state === 'Planning' ? 'Yellow' : 'Green'} label={workArea.state} />
+        </span>
+      </summary>
+      <div className="workarea-detail-grid">
+        <SignalList title="Milestones" items={workArea.milestones.map((item) => ({ text: item }))} />
+        <SignalList title="Blockers" items={workArea.blockers.map((item) => ({ text: item }))} />
+        <SignalList title="Actions" items={workArea.actions.map((item) => ({ text: item, meta: workArea.owner }))} />
+        <SignalList title="Risks" items={workArea.risks.map((item) => ({ text: item }))} />
+        <SignalList title="Decisions" items={workArea.decisions.map((item) => ({ text: item }))} />
+        <SignalList title="Unknowns" items={workArea.unknowns.map((item) => ({ text: item }))} />
+      </div>
+    </details>
+  );
+}
+
+function SignalList({ title, items }: { title: string; items: Array<{ text: string; meta?: string }> }) {
+  return (
+    <section className="ops-panel signal-list">
+      <div className="ops-panel__heading">
+        <h2>{title}</h2>
+        <span>{items.length} items</span>
+      </div>
+      <div>
+        {items.length > 0 ? items.map((item) => (
+          <article className="signal-row" key={`${title}-${item.text}`}>
+            <strong>{item.text}</strong>
+            {item.meta && <span>{item.meta}</span>}
+          </article>
+        )) : (
+          <article className="signal-row signal-row--empty">
+            <strong>No current items</strong>
+          </article>
+        )}
       </div>
     </section>
   );

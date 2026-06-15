@@ -7,6 +7,7 @@ export type ItemState = 'Not started' | 'In progress' | 'Waiting' | 'Complete';
 export type MilestoneState = 'Complete' | 'Upcoming' | 'At risk' | 'Blocked' | 'Not Active';
 export type DeliverableState = 'Complete' | 'Upcoming' | 'At risk' | 'Missing';
 export type QualityGateStatus = 'Red' | 'Yellow' | 'Green' | 'Upcoming';
+export type WorkAreaState = 'Attention' | 'Planning' | 'Healthy';
 
 export interface Milestone {
   id: string;
@@ -107,6 +108,23 @@ export interface OperatingModule {
   status: 'Active' | 'Planning' | 'Watch';
 }
 
+export interface WorkArea {
+  id: string;
+  projectId: string;
+  name: string;
+  owner: string;
+  state: WorkAreaState;
+  currentFocus: string;
+  nextMilestone: string;
+  attentionReason: string;
+  milestones: string[];
+  blockers: string[];
+  actions: string[];
+  risks: string[];
+  decisions: string[];
+  unknowns: string[];
+}
+
 export interface CategorySummary {
   category: ReadinessCategory;
   icon: LucideIcon;
@@ -153,7 +171,7 @@ const projectShells = [
   { id: 'rolme-ls3', projectNumber: 'POC-2402', name: 'ROLME LS3' },
   { id: 'huntv-well-13', projectNumber: 'POC-2403', name: 'HUNTV Well 13' },
   { id: 'waukc-beechnut', projectNumber: 'POC-2404', name: 'WAUKC Beechnut' },
-  { id: 'nppwd-pfas', projectNumber: 'POC-2405', name: 'NPPWD PFAS' },
+  { id: 'nssd1-pfas', projectNumber: 'POC-2405', name: 'NSSD1 PFAS' },
 ];
 
 export const projects: Project[] = [
@@ -440,6 +458,243 @@ export const operatingModules: OperatingModule[] = [
     status: 'Watch',
   },
 ];
+
+export const projectWorkAreas: Record<string, WorkArea[]> = {
+  'elmhc-bundle-5': [
+    {
+      id: 'wa-elmhc-design',
+      projectId: 'elmhc-bundle-5',
+      name: 'Design & Controls Package',
+      owner: 'Riley Chen',
+      state: 'Attention',
+      currentFocus: 'Close design package for procurement release.',
+      nextMilestone: 'Design',
+      attentionReason: 'Open comments and control description gaps are threatening Design Complete.',
+      milestones: ['Design', 'Procurement', 'FAT'],
+      blockers: ['Open design review comments', 'Control description incomplete', 'QAQC design review signoff pending'],
+      actions: ['Close final three design review comments', 'Complete control description', 'Route QAQC design signoff'],
+      risks: ['FAT planning may start from incomplete controls basis'],
+      decisions: ['Confirm design package can release with two marked-up comments'],
+      unknowns: ['Whether client will require a supplemental control narrative review'],
+    },
+    {
+      id: 'wa-elmhc-procurement',
+      projectId: 'elmhc-bundle-5',
+      name: 'Procurement Release',
+      owner: 'Avery Grant',
+      state: 'Attention',
+      currentFocus: 'Release switchgear PR and accounting code.',
+      nextMilestone: 'Procurement',
+      attentionReason: 'Switchgear PR approval is blocking procurement readiness.',
+      milestones: ['Procurement', 'FAT'],
+      blockers: ['Switchgear PR approval', 'Accounting code confirmation'],
+      actions: ['Approve switchgear PR and confirm accounting code', 'Confirm vendor quote validity window'],
+      risks: ['Procurement release may compress FAT schedule'],
+      decisions: ['Approve early release before design comments are fully closed'],
+      unknowns: ['Vendor shipment date after PR approval'],
+    },
+    {
+      id: 'wa-elmhc-startup',
+      projectId: 'elmhc-bundle-5',
+      name: 'FAT & Startup Readiness',
+      owner: 'Sam Rivera',
+      state: 'Planning',
+      currentFocus: 'Confirm FAT requirement and reserve startup specialist.',
+      nextMilestone: 'FAT',
+      attentionReason: 'FAT and startup staffing need planning before they become blockers.',
+      milestones: ['FAT', 'Startup'],
+      blockers: ['FAT requirement unconfirmed', 'Startup specialist not reserved'],
+      actions: ['Confirm FAT requirement with controls lead and client', 'Reserve startup specialist for August window'],
+      risks: ['Startup resource not assigned'],
+      decisions: ['Whether FAT will be witnessed by client'],
+      unknowns: ['Client witness availability for July FAT'],
+    },
+    {
+      id: 'wa-elmhc-closeout',
+      projectId: 'elmhc-bundle-5',
+      name: 'Closeout Package',
+      owner: 'Riley Chen',
+      state: 'Healthy',
+      currentFocus: 'Keep O&M package visible for later closeout.',
+      nextMilestone: 'Closeout',
+      attentionReason: 'No immediate attention required.',
+      milestones: ['Closeout'],
+      blockers: [],
+      actions: ['Draft O&M index after FAT procedure approval'],
+      risks: [],
+      decisions: [],
+      unknowns: ['Final as-built drawing count'],
+    },
+  ],
+  'rolme-ls3': [
+    {
+      id: 'wa-rolme-transition',
+      projectId: 'rolme-ls3',
+      name: 'Kickoff & Transition',
+      owner: 'Nina Brooks',
+      state: 'Attention',
+      currentFocus: 'Complete sales-to-PM transition and lock assumptions.',
+      nextMilestone: 'Kickoff',
+      attentionReason: 'Transition assumptions are blocking kickoff readiness.',
+      milestones: ['Kickoff', 'Design'],
+      blockers: ['Transition meeting incomplete', 'Estimator assumptions not captured'],
+      actions: ['Hold transition meeting and capture assumptions'],
+      risks: ['Kickoff decisions may be made without estimate context'],
+      decisions: ['Accept current assumptions or pause kickoff until estimator review'],
+      unknowns: ['Client availability for recurring decision cadence'],
+    },
+    {
+      id: 'wa-rolme-procurement',
+      projectId: 'rolme-ls3',
+      name: 'Pump Procurement',
+      owner: 'Nina Brooks',
+      state: 'Attention',
+      currentFocus: 'Make pump vendor decision for early release.',
+      nextMilestone: 'Procurement',
+      attentionReason: 'Vendor selection is blocking PR routing and delivery planning.',
+      milestones: ['Procurement', 'Startup'],
+      blockers: ['Pump vendor decision', 'Third quote missing', 'PR shell cannot route'],
+      actions: ['Decide whether pump package is early release', 'Submit PR once vendor decision is made'],
+      risks: ['Procurement delay from pump vendor decision'],
+      decisions: ['Select vendor from two quotes or wait for third quote'],
+      unknowns: ['Final pump lead time after award'],
+    },
+    {
+      id: 'wa-rolme-startup',
+      projectId: 'rolme-ls3',
+      name: 'Startup Planning',
+      owner: 'Sam Rivera',
+      state: 'Planning',
+      currentFocus: 'Draft startup sequence around controls narrative.',
+      nextMilestone: 'Startup',
+      attentionReason: 'Startup plan depends on controls narrative due this month.',
+      milestones: ['Design', 'FAT', 'Startup'],
+      blockers: ['Controls narrative due from design', 'FAT applicability unknown'],
+      actions: ['Draft startup sequence around controls narrative'],
+      risks: ['Startup planning without controls narrative'],
+      decisions: ['Use draft design sequence for first-pass startup plan'],
+      unknowns: ['Whether selected pump package requires FAT'],
+    },
+  ],
+  'huntv-well-13': [
+    {
+      id: 'wa-huntv-field',
+      projectId: 'huntv-well-13',
+      name: 'Field Startup Staffing',
+      owner: 'Elena Wright',
+      state: 'Attention',
+      currentFocus: 'Resolve instrumentation technician conflict.',
+      nextMilestone: 'Startup',
+      attentionReason: 'Shared technician is double-booked for startup window.',
+      milestones: ['FAT', 'Startup'],
+      blockers: ['Instrumentation technician availability'],
+      actions: ['Confirm instrumentation technician availability for July'],
+      risks: ['Resource conflict for instrumentation technician'],
+      decisions: ['Reassign shared technician or request backup support'],
+      unknowns: ['Backup technician availability'],
+    },
+    {
+      id: 'wa-huntv-procurement',
+      projectId: 'huntv-well-13',
+      name: 'VFD Delivery',
+      owner: 'Elena Wright',
+      state: 'Planning',
+      currentFocus: 'Confirm VFD ship date.',
+      nextMilestone: 'Procurement',
+      attentionReason: 'Delivery tracking drives FAT date confidence.',
+      milestones: ['Procurement', 'FAT'],
+      blockers: ['VFD ship date pending'],
+      actions: ['Get VFD ship date from supplier'],
+      risks: ['FAT date may remain tentative without tracking'],
+      decisions: ['Hold FAT date or move after tracking confirmation'],
+      unknowns: ['Carrier pickup date'],
+    },
+  ],
+  'waukc-beechnut': [
+    {
+      id: 'wa-waukc-design',
+      projectId: 'waukc-beechnut',
+      name: 'Permit & Design Closeout',
+      owner: 'Marcus Stone',
+      state: 'Attention',
+      currentFocus: 'Consolidate permit response matrix.',
+      nextMilestone: 'Design',
+      attentionReason: 'Permit response churn is delaying design closeout.',
+      milestones: ['Design', 'Procurement'],
+      blockers: ['Permit response matrix', 'Client decision cadence'],
+      actions: ['Consolidate county permit response matrix', 'Confirm recurring decision meeting with client'],
+      risks: ['Design closeout slips from permit response churn'],
+      decisions: ['Assign single client approver for permit responses'],
+      unknowns: ['Which comments require engineering revision'],
+    },
+    {
+      id: 'wa-waukc-valves',
+      projectId: 'waukc-beechnut',
+      name: 'Valve Package',
+      owner: 'Marcus Stone',
+      state: 'Planning',
+      currentFocus: 'Decide early-release valve boundaries.',
+      nextMilestone: 'Procurement',
+      attentionReason: 'Valve lead time may affect procurement complete.',
+      milestones: ['Procurement', 'FAT'],
+      blockers: ['Valve release boundary not decided'],
+      actions: ['Decide early-release valve package boundaries'],
+      risks: ['Valve lead time issue'],
+      decisions: ['Release valve package before final design closeout'],
+      unknowns: ['Confirmed valve lead time'],
+    },
+  ],
+  'nssd1-pfas': [
+    {
+      id: 'wa-nssd1-fat',
+      projectId: 'nssd1-pfas',
+      name: 'FAT Execution',
+      owner: 'Sam Rivera',
+      state: 'Attention',
+      currentFocus: 'Approve PFAS media skid FAT procedure.',
+      nextMilestone: 'FAT',
+      attentionReason: 'FAT procedure approval is the active quality gate.',
+      milestones: ['FAT', 'Startup'],
+      blockers: ['FAT procedure approval', 'VP entry needed for FAT approval'],
+      actions: ['Approve PFAS media skid FAT procedure'],
+      risks: ['FAT approval delay may compress startup readiness'],
+      decisions: ['Approve procedure with current technical comments or return to vendor'],
+      unknowns: ['Whether client will request additional FAT test cases'],
+    },
+    {
+      id: 'wa-nssd1-startup',
+      projectId: 'nssd1-pfas',
+      name: 'Startup & Sampling',
+      owner: 'Priya Shah',
+      state: 'Planning',
+      currentFocus: 'Add sampling roles to startup plan.',
+      nextMilestone: 'Startup',
+      attentionReason: 'Sampling plan must be complete before startup readiness review.',
+      milestones: ['Startup', 'Closeout'],
+      blockers: ['Sampling roles not in startup plan'],
+      actions: ['Add sampling roles to startup plan'],
+      risks: ['Warranty letter timing compresses SAT closeout'],
+      decisions: ['Assign sampling ownership to vendor rep or internal startup lead'],
+      unknowns: ['Lab courier pickup window during startup'],
+    },
+    {
+      id: 'wa-nssd1-closeout',
+      projectId: 'nssd1-pfas',
+      name: 'Warranty & Closeout',
+      owner: 'Riley Chen',
+      state: 'Healthy',
+      currentFocus: 'Prepare closeout package after SAT.',
+      nextMilestone: 'Closeout',
+      attentionReason: 'No immediate attention required.',
+      milestones: ['Closeout'],
+      blockers: [],
+      actions: ['Draft warranty letter for client review'],
+      risks: [],
+      decisions: ['Confirm warranty letter timing with legal'],
+      unknowns: ['Final closeout attachment list'],
+    },
+  ],
+};
 
 const dayInMs = 1000 * 60 * 60 * 24;
 
